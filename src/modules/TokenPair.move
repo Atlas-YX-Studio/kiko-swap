@@ -1,6 +1,9 @@
 address 0x100 {
-module {
-    
+module TokenPair {
+    use 0x1::Token;
+    use 0x1::Event;
+
+    // token pair pool
     struct TokenPair<X, Y> has key, store  {
         reserve_x: Token::Token<X>,
         reserve_y: Token::Token<Y>,
@@ -19,7 +22,7 @@ module {
          // token code of X type
         x_token_code: Token::TokenCode,
         // token code of X type
-        y_token_code: Token::TokenCode
+        y_token_code: Token::TokenCode,
         // 0 for remove, 1 for add
         direction: u8,
         // amount of x and y
@@ -33,7 +36,7 @@ module {
          // token code of X type
         x_token_code: Token::TokenCode,
         // token code of X type
-        y_token_code: Token::TokenCode
+        y_token_code: Token::TokenCode,
         // amount in
         amount_x_in: u128,
         amount_y_in: u128,
@@ -49,22 +52,22 @@ module {
         // token code of X type
         x_token_code: Token::TokenCode,
         // token code of X type
-        y_token_code: Token::TokenCode
+        y_token_code: Token::TokenCode,
         // reserve
         reserve_x: u128,
         reserve_y: u128,
     }
 
-    public fun create_pair<X: store, Y: store>(signer: &&signer) {
+    public fun create_pair<X: store, Y: store>(signer: &signer) {
 
     }
 
-    public fun mint<X: store, Y: store>(signer: &&signer, to: address) : u128 {
-        
+    public fun mint<X: store, Y: store>(signer: &signer, to: address) : u128 {
+        0
     }
 
-    public fun burn<X: store, Y: store>(signer: &&signer, to: address) : u128 {
-
+    public fun burn<X: store, Y: store>(signer: &signer, to: address) : u128 {
+        0
     }
 
     public fun swap<X: store, Y: store>(signer: &&signer, amount_x_out: u128, amount_y_out: u128, to: address) {
@@ -72,11 +75,11 @@ module {
         //
     }
 
-    public fun skim<X: store, Y: store>(signer: &&signer, to: address) {
+    public fun skim<X: store, Y: store>(signer: &signer, to: address) {
 
     }
 
-    public fun sync<X: store, Y: store>(signer: &&signer) {
+    public fun sync<X: store, Y: store>(signer: &signer) {
 
     }
 
