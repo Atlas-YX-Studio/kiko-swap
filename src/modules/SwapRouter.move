@@ -63,13 +63,23 @@ module Router {
         };
     }
 
+    // remove liquidity
     public fun remove_liquidity<X: store, Y: store>(
         signer: &signer,
         liquidity: u128,
         amount_x_min: u128,
         amount_y_min: u128
     ) {
-        
+        let order = SwapLibrary::compare_token<X, Y>();
+        assert(order != 0, IDENTICAL_TOKEN);
+        let amount_x, amount_y;
+        if (order == 1) {
+            (amount_x, amount_y); = SwapPair::remove_liquidity<X, Y>(signer, liquidity);
+        } else {
+            (amount_y, amount_x); = SwapPair::remove_liquidity<Y, X>(signer, liquidity);
+        };
+        assert(amount_x >= amount_x_min, INSUFFICIENT_X_AMOUNT);
+        assert(amount_y >= amount_y_min, INSUFFICIENT_Y_AMOUNT);
     }
 
     // get y
