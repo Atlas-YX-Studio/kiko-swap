@@ -2,7 +2,7 @@ address 0x100 {
 module LPToken {
     use 0x1::Token::{Self, Token};
 
-    struct LPToken<X, Y> has key, store { }
+    struct LPToken<X, Y> has key, store {}
 
     const PRECISION: u8 = 9;
 
@@ -37,9 +37,19 @@ module LPToken {
     }
 
     /// Anyone can mint LPToken<X, Y>
-    public fun mint<X: store, Y: store>(_account: &signer, amount: u128): Token<LPToken<X, Y>> acquires SharedMintCapability{
+    public fun mint<X: store, Y: store>(amount: u128): Token<LPToken<X, Y>> acquires SharedMintCapability{
         let cap = borrow_global<SharedMintCapability<X, Y>>(token_address<X, Y>());
         Token::mint_with_capability(&cap.cap, amount)
+    }
+
+    /// Mint token to singer
+    public fun mint_to<X: store, Y: store>(account: signer, amount: u128): Token<LPToken<X, Y>> acquires SharedMintCapability{
+        let is_accept_token = Account::is_accepts_token<LPToken<X, Y>>(Signer::address_of(&account));
+        if (!is_accept_token) {
+            Account::do_accept_token<LPToken<X, Y>>(&account);
+        };
+        let token = mint<LPToken<X, Y>>(amount);
+        Account::deposit_to_self(&account, token);
     }
 
     /// Return the token address.
@@ -49,22 +59,10 @@ module LPToken {
 }
 
 module LPTokenScripts{
-    use 0x100::LPToken::{Self,LPToken};
-    use 0x1::Account;
-    use 0x1::Signer;
+    use 0x100::LPToken;
 
     public(script) fun initialize<X: store, Y: store>(sender: signer) {
         LPToken::initialize<X, Y>(&sender);
     }
-
-    public(script) fun mint<X: store, Y: store>(sender: signer, amount: u128){
-        let token = LPToken::mint<X, Y>(&sender, amount);
-        let sender_addr = Signer::address_of(&sender);
-        if(Account::is_accept_token<LPToken<X, Y>>(sender_addr)){
-            Account::do_accept_token<LPToken<X, Y>>(&sender);
-        };
-        Account::deposit(sender_addr, token);
-    }
 }
-
 }

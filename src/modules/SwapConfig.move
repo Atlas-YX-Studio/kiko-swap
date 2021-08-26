@@ -1,17 +1,16 @@
 address 0x100 {
 module SwapConfig {
 
+    const CONFIG_ADDRESS = 0x100;
+
     struct Config has key, store {
-        // admin
-        admin: address,
         // deposit fee to
         fee_to: address,
-        // fee to lp pool
-        lp_fee_rate: u128,
-        // fee to treasury
+        // total fee, 25 for 0.25%
+        // 30 0。3%
+        fee_rate: u128,
+        // fee ratio to treasury, 5 for 0.05%
         treasury_fee_rate: u128,
-        // fee to token buyback
-        buyback_fee_rate: u128,
         // extra config
         extra0: u128,
         extra1: u128,
@@ -22,7 +21,7 @@ module SwapConfig {
 
     // init
     public fun init() {
-
+        
     }
 
     // update
@@ -30,9 +29,9 @@ module SwapConfig {
 
     }
 
-    // update admin
-    public fun update_admin(signer: &signer, admin: address) {
-
+    public fun get_fee_config(): (address, u128, u128) {
+        let config = borrow_global<Config>(CONFIG_ADDRESS);
+        (config.fee_to, config.fee_rate, config.treasury_fee_rate)
     }
 
 }
