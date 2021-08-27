@@ -67,7 +67,12 @@ use 0x100::SwapLibrary;
     // **** TOKEN PAIR ****
 
     public(script) fun create_pair<X: store, Y: store>(sender: signer) {
-        SwapPair::create_pair<X, Y>(&sender);
+        let order = SwapLibrary::get_token_order<X, Y>();
+        if (order == 1) {
+            SwapPair::create_pair<X, Y>(&sender);
+        } else {
+            SwapPair::create_pair<Y, X>(&sender);
+        }
     }
 
     // **** LIQUDITY ****
