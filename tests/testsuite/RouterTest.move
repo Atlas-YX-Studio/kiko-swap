@@ -7,7 +7,7 @@ script {
     use 0x1::DummyToken::DummyToken;
     // create_pair
     fun create_pair(sender: signer) {
-        SwapPair::create_pair<STC, DummyToken>(&sender);
+        SwapScripts::create_pair<STC, DummyToken>(&sender);
     }
 }
 
@@ -23,7 +23,7 @@ script {
 
     // add_liquidity
     fun add_liquidity(sender: signer) {
-        SwapRouter::add_liquidity<STC, DummyToken>(&sender, 2000000*MULTIPLE , 1000000*MULTIPLE, 20*MULTIPLE, 10*MULTIPLE);
+        SwapScripts::add_liquidity<STC, DummyToken>(&sender, 2000000*MULTIPLE , 1000000*MULTIPLE, 20*MULTIPLE, 10*MULTIPLE);
     }
 }
 
@@ -39,7 +39,7 @@ script {
 
     fun swap_exact_token_for_token(sender: signer) {
         // swap
-        SwapRouter::swap_exact_token_for_token<STC, DummyToken>(&sender, 1*MULTIPLE , 100*MULTIPLE);
+        SwapScripts::swap_exact_token_for_token<STC, DummyToken>(&sender, 1*MULTIPLE , 100*MULTIPLE);
     }
 }
 
@@ -56,6 +56,6 @@ script {
     fun swap_token_for_exact_token(sender: signer) {
 
         // swap
-        SwapRouter::swap_token_for_exact_token<STC, DummyToken>(&sender, 1*MULTIPLE , 100*MULTIPLE);
+        SwapScripts::swap_token_for_exact_token<STC, DummyToken>(&sender, 1*MULTIPLE , 100*MULTIPLE);
     }
 }
