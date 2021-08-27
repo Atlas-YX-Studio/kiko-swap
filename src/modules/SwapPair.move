@@ -10,6 +10,7 @@ module SwapPair {
 
     const PERMISSION_DENIED: u64 = 200001;
     const INSUFFICIENT_LIQUIDITY_MINTED: u64 = 200002;
+    const INSUFFICIENT_LIQUIDITY_BURNED: u64 = 200003;
 
     // token pair pool
     struct SwapPair<X, Y> has key, store {
@@ -121,7 +122,7 @@ module SwapPair {
     }
 
     // mint fee to platform
-    fun _mint_fee(
+    fun _mint_fee<X: store, Y: store>(
         swap_pair: &mut SwapPair<X, Y>,
         _total_supply: u128
     ): bool {
@@ -151,7 +152,7 @@ module SwapPair {
         return fee_on
     }
 
-    /// add liquidity and mint LP token 
+    // mint LP token to user and platform
     fun mint<X: store, Y: store>(
         signer: &signer,
         amount_x: u128,
@@ -159,10 +160,10 @@ module SwapPair {
     ) {
         let swap_pair = borrow_global_mut<SwapPair<X, Y>>(PAIR_ADDRESS);
         let balance_x = Token::value<X>(&swap_pair.reserve_x_token);
-        let balance_y = Token::value<X>(&swap_pair.reserve_y_token);
-        let total_supply: u128 = Token::market_cap<LiquidityToken<X, Y>>();
+        let balance_y = Token::value<Y>(&swap_pair.reserve_y_token);
+        let total_supply = Token::market_cap<LiquidityToken<X, Y>>();
 
-        let fee_on = _mint_fee(&mut swap_pair, total_supply);
+        let fee_on = _mint_fee<X, Y>(&mut swap_pair, total_supply);
         let liquidity: u128;
         if (total_supply == 0) {
             liquidity = Math::sqrt(amount_x * amount_y);
@@ -177,14 +178,14 @@ module SwapPair {
         };
         assert(liquidity > 0, INSUFFICIENT_LIQUIDITY_MINTED);
         LPToken::mint_to(signer, liquidity);
-        
+
         _update<X, Y>(balance_x, balance_y, swap_pair);
         if (fee_on) {
             swap_pair.k_last = balance_x * balance_y;
         };
     }
 
-    // transfer token
+    // transfer token and emit event
     public fun add_liquidity<X: store, Y: store>(
         signer: &signer,
         amount_x: u128,
@@ -196,27 +197,77 @@ module SwapPair {
         let swap_pair = borrow_global_mut<SwapPair<X, Y>>(PAIR_ADDRESS);
         Token::deposit(&mut swap_pair.reserve_x_token, x_token);
         Token::deposit(&mut swap_pair.reserve_y_token, y_token);
-
+        // mint LP token to user
         mint(signer, amount_x, amount_y);
 
         Event::emit_event(&mut swap_pair.liquidity_event,
             LiquidityEvent {
                 signer: Signer::address_of(signer),
-                y_token_code: Token::token_code<Y>(),
                 x_token_code: Token::token_code<X>(),
+                y_token_code: Token::token_code<Y>(),
                 direction: 1,
                 amount_x: amount_x,
                 amount_y: amount_y,
                 reserve_amount_x: swap_pair.reserve_x,
                 reserve_amount_y: swap_pair.reserve_y,
-                block_timestamp_last: Timestamp::now_milliseconds();
+                block_timestamp_last: swap_pair.block_timestamp_last;
             });
     }
 
-    public fun burn<X: store, Y: store>(signer: &signer) : u128 {
-        0
+    // burn LP token and obtain x and y
+    public fun burn<X: store, Y: store>(
+        signer: &signer, 
+        liquidity: u128
+    ): (u128, u128) {
+        let liquidity_token = Account::withdraw<LPToken<X, Y>>(signer, liquidity);
+
+        let swap_pair = borrow_global_mut<SwapPair<X, Y>>(PAIR_ADDRESS);
+        let balance_x = Token::value<X>(&swap_pair.reserve_x_token);
+        let balance_y = Token::value<Y>(&swap_pair.reserve_y_token);
+        let total_supply = Token::market_cap<LPToken<X, Y>>();
+        // mint LP token to platform
+        bool fee_on = _mint_fee<X, Y>(swap_pair);
+        let amount_x = liquidity * balance_x / total_supply;
+        let amount_y = liquidity * balance_y / total_supply;
+        assert(amount_x > 0 && amount_y > 0, INSUFFICIENT_LIQUIDITY_BURNED);
+        // burn LP token
+        LPToken::burn<X, Y>(signer, liquidity_token);
+        // obtain x and y
+        let x_token = Token::withdraw<X>(&swap_pair.reserve_x_token);
+        let y_token = Token::withdraw<Y>(&swap_pair.reserve_y_token);
+        let signer_address = Signer::address_of(signer);
+        Account::deposit<X>(signer_address, x_token);
+        Account::deposit<Y>(signer_address, y_token);
+        _update<X, Y>(balance_x, balance_y, swap_pair);
+        if (fee_on) {
+            swap_pair.k_last = balance_x * balance_y;
+        };
+        return (amount_x, amount_y)
     }
 
+    // remove liquidity and emit event
+    public fun remove_liquidity<X: store, Y: store>(
+        &signer: &&signer, 
+        liquidity: u128
+    ): (u128, u128) {
+        let (amount_x, amount_y) = SwapPair::burn<X, Y>(signer, liquidity);        
+
+        Event::emit_event(&mut swap_pair.liquidity_event,
+            LiquidityEvent {
+                signer: Signer::address_of(signer),
+                x_token_code: Token::token_code<X>(),
+                y_token_code: Token::token_code<Y>(),
+                direction: 0,
+                amount_x: amount_x,
+                amount_y: amount_y,
+                reserve_amount_x: swap_pair.reserve_x,
+                reserve_amount_y: swap_pair.reserve_y,
+                block_timestamp_last: swap_pair.block_timestamp_last;
+            });
+        return (amount_x, amount_y)
+    }
+
+    // swap token
     public fun swap<X: store, Y: store>(
         x_in: Token::Token<X>,
         y_out: u128,
