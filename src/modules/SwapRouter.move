@@ -34,7 +34,6 @@ module SwapRouter {
         let (reserve_x, reserve_y) = SwapPair::get_reserves<X, Y>();
     
         let (amount_x, amount_y);
-
         if (reserve_x == 0 && reserve_y == 0) {
             (amount_x, amount_y) = (amount_x_desired, amount_y_desired);
         } else {
