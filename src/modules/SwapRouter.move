@@ -14,6 +14,8 @@ module SwapRouter {
     const INSUFFICIENT_OUTPUT_AMOUNT: u64 = 100005;
     const EXCESSIVE_INPUT_AMOUNT: u64 = 100006;
 
+    // **** ADD LIQUDITY ****
+
     fun _add_liquidity<X: store, Y: store>(
         signer: &signer,
         amount_x_desired: u128,
@@ -68,6 +70,8 @@ module SwapRouter {
         };
     }
 
+    // **** REMOVE LIQUDITY ****
+
     // remove liquidity
     public fun remove_liquidity<X: store, Y: store>(
         signer: &signer,
@@ -86,25 +90,29 @@ module SwapRouter {
         assert(amount_y >= amount_y_min, INSUFFICIENT_Y_AMOUNT);
     }
 
+    // **** SWAP EXACT TOKEN FOR TOKEN ****
+
     fun _swap_exact_token_for_token<X: store, Y: store>(
         signer: &signer, 
         amount_x_in: u128,
         amount_y_in: u128,
         amount_x_out_min: u128,
         amount_y_out_min: u128
-    ) {
+    ): u128 {
         if (amount_x_in > 0) {
             // x swap y
             let (reserve_x, reserve_y) = SwapPair::get_reserves<X, Y>();
             let amount_y_out = SwapLibrary::get_amount_out(amount_x_in, reserve_x, reserve_y);
             assert(amount_y_out >= amount_y_out_min, INSUFFICIENT_OUTPUT_AMOUNT);
             SwapPair::swap<X, Y>(signer, amount_x_in, 0u128, 0u128, amount_y_out);
+            amount_y_out
         } else {
             // y swap x
             let (reserve_x, reserve_y) = SwapPair::get_reserves<X, Y>();
             let amount_x_out = SwapLibrary::get_amount_out(amount_y_in, reserve_y, reserve_x);
             assert(amount_x_out >= amount_x_out_min, INSUFFICIENT_OUTPUT_AMOUNT);
             SwapPair::swap<X, Y>(signer, 0u128, amount_y_in, amount_x_out, 0u128);
+            amount_x_out
         };
     }
 
@@ -114,15 +122,17 @@ module SwapRouter {
         signer: &signer,
         amount_x_in: u128,
         amount_y_out_min: u128
-    ) {
+    ): u128 {
         SwapLibrary::accept_token<Y>(signer);
         let order = SwapLibrary::get_token_order<X, Y>();
         if (order == 1) {
-            _swap_exact_token_for_token<X, Y>(amount_x_in, 0u128, 0u128, amount_y_out_min);
+            _swap_exact_token_for_token<X, Y>(amount_x_in, 0u128, 0u128, amount_y_out_min)
         } else {
             _swap_exact_token_for_token<Y, X>(0u128, amount_x_in, amount_y_out_min, 0u128);
         };
     }
+
+    // **** SWAP TOKEN FOR EXACT TOKEN ****
     
     fun _swap_token_for_exact_token<X: store, Y: store>(
         signer: &signer,
