@@ -235,6 +235,7 @@ module SwapPair {
 
         Token::deposit(&mut swap_pair.reserve_x, x_in);
         Token::deposit(&mut swap_pair.reserve_y, y_in);
+        
         // transfer token to pair
         let x_swapped = Token::withdraw(&mut swap_pair.reserve_x, x_out);
         let y_swapped = Token::withdraw(&mut swap_pair.reserve_y, y_out);

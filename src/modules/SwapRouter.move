@@ -123,7 +123,6 @@ module Router {
         assert(amount_out > 0, ERROR_ROUTER_INSUFFICIENT_OUTPUT_AMOUNT);
         assert(reserve_in > 0 && reserve_out > 0, ERROR_ROUTER_INSUFFICIENT_LIQUIDITY);
         let numerator = reserve_in * amount_out * 1000;
-        // todo denominator = reserveOut.sub(amountOut).mul(997); 
         let denominator = (reserve_out - amount_out) * 997;
         (numerator / denominator) + 1
     }
