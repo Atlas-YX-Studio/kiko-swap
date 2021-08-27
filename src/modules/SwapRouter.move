@@ -1,7 +1,6 @@
 address 0x100 {
 module SwapRouter {
     use 0x1::Signer;
-    use 0x100::SwapConfig::Config;
     use 0x100::SwapLibrary;
     use 0x100::LPToken::LPToken;
 

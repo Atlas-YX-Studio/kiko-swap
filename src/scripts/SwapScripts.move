@@ -1,8 +1,63 @@
 address 0x200 {
 module SwapScripts {
+use 0x100::LPToken;
 use 0x100::SwapConfig;
 use 0x100::SwapPair;
 use 0x100::SwapRouter;
+
+    // init config only once
+    public(script) fun init_config(
+        sender: signer,
+        fee_to: address,
+        fee_rate: u128,
+        treasury_fee_rate: u128,
+        extra0: u128,
+        extra1: u128,
+        extra2: u128,
+        extra3: u128,
+        extra4: u128,
+    ) {
+        SwapConfig::initialize(
+            &sender, 
+            fee_to, 
+            fee_rate, 
+            treasury_fee_rate,
+            extra0, 
+            extra1, 
+            extra2, 
+            extra3, 
+            extra4
+        );
+    }
+
+    // update config
+    public(script) fun update_config(
+        signer: &signer,
+        fee_to: address,
+        fee_rate: u128,
+        treasury_fee_rate: u128,
+        extra0: u128,
+        extra1: u128,
+        extra2: u128,
+        extra3: u128,
+        extra4: u128,
+    ) {
+        SwapConfig::update(
+            &sender, 
+            fee_to, 
+            fee_rate, 
+            treasury_fee_rate,
+            extra0, 
+            extra1, 
+            extra2, 
+            extra3, 
+            extra4
+        );
+    }
+
+    public(script) fun init_lp_token<X: store, Y: store>(sender: signer) {
+        LPToken::initialize<X, Y>(&sender);
+    }
 
     public(script) fun create_pair<X: store, Y: store>(sender: signer) {
         SwapPair::create_pair<X, Y>(&sender);

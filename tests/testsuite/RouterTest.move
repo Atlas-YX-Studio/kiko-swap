@@ -1,4 +1,4 @@
-//! account: firstcoin, 20000000000 0x1::STC::STC
+//! account: firstcoin
 //! sender: firstcoin
 address init_firstcoin_address = {{firstcoin}};
 script {
@@ -12,7 +12,6 @@ script {
 }
 
 //! new-transaction
-//! account: firstcoin, 20000000000 0x1::STC::STC
 //! sender: firstcoin
 address add_firstcoin_address = {{firstcoin}};
 script {

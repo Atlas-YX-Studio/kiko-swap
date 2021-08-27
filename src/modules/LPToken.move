@@ -57,12 +57,4 @@ module LPToken {
         Token::token_address<LPToken<X, Y>>()
     }
 }
-
-module LPTokenScripts{
-    use 0x100::LPToken;
-
-    public(script) fun initialize<X: store, Y: store>(sender: signer) {
-        LPToken::initialize<X, Y>(&sender);
-    }
-}
 }
