@@ -6,8 +6,7 @@ module SwapConfig {
     struct Config has key, store {
         // deposit fee to
         fee_to: address,
-        // total fee, 25 for 0.25%
-        // 30 0。3%
+        // total fee, 30 for 0.3%
         fee_rate: u128,
         // fee ratio to treasury, 5 for 0.05%
         treasury_fee_rate: u128,
@@ -26,7 +25,7 @@ module SwapConfig {
 
     // update
     public fun update() {
-
+        
     }
 
     public fun get_fee_config(): (address, u128, u128) {
