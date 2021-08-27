@@ -132,7 +132,7 @@ module SwapPair {
     // mint fee to platform
     fun f_mint_fee<X: store, Y: store>(
         swap_pair: &mut SwapPair<X, Y>,
-        total_supply: u128
+        _total_supply: u128
     ): bool {
         let _reserve_x = swap_pair.reserve_x;
         let _reserve_y = swap_pair.reserve_y;
@@ -144,7 +144,7 @@ module SwapPair {
                 let root_k = Math::sqrt(_reserve_x * _reserve_y);
                 let root_k_last = Math::sqrt(_k_last);
                 if (root_k > root_k_last) {
-                    let numerator = total_supply * (root_k - root_k_last);
+                    let numerator = _total_supply * (root_k - root_k_last);
                     let denominator = (fee_rate / treasury_fee_rate - 1) * root_k + root_k_last;
                     let liquidity = numerator / denominator;
                     if (liquidity > 0) {
@@ -165,7 +165,7 @@ module SwapPair {
         signer: &signer,
         amount_x: u128,
         amount_y: u128
-    ) {
+    ) acquires SwapPair {
         // transfer token to pair
         let x_token = Account::withdraw<X>(signer, amount_x);
         let y_token = Account::withdraw<Y>(signer, amount_y);
@@ -217,7 +217,7 @@ module SwapPair {
     public fun burn<X: store, Y: store>(
         signer: &signer, 
         liquidity: u128
-    ): (u128, u128) {
+    ): (u128, u128) acquires SwapPair{
         let liquidity_token = Account::withdraw<LPToken<X, Y>>(signer, liquidity);
 
         let swap_pair = borrow_global_mut<SwapPair<X, Y>>(PAIR_ADDRESS);
@@ -264,7 +264,8 @@ module SwapPair {
         amount_y_in: u128,
         amount_x_out: u128,
         amount_y_out: u128
-    ) {
+    ) acquires SwapPair{
+        let signer_address = Signer::address_of(signer);
         // transfer token_in to pair
         assert(amount_x_in > 0 || amount_y_in > 0, INSUFFICIENT_INPUT_AMOUNT);
         let swap_pair = borrow_global_mut<SwapPair<X, Y>>(PAIR_ADDRESS);

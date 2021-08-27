@@ -61,7 +61,7 @@ module SwapConfig {
         extra2: u128,
         extra3: u128,
         extra4: u128,
-    ) {
+    ) acquires Config {
         assert(Signer::address_of(signer) == CONFIG_ADDRESS, PERMISSION_DENIED);
         assert(fee_rate < 10000, EXCESSIVE_FEE_RATE);
         assert(treasury_fee_rate <= fee_rate, EXCESSIVE_TREASURY_FEE_RATE);
@@ -82,7 +82,7 @@ module SwapConfig {
         (config.fee_to, config.fee_rate, config.treasury_fee_rate)
     }
 
-    public fun get_extra_config(): (u128, u128, u128, u128, u128) {
+    public fun get_extra_config(): (u128, u128, u128, u128, u128) acquires Config {
         let config = borrow_global<Config>(CONFIG_ADDRESS);
         (config.extra0, config.extra1, config.extra2, config.extra3, config.extra4)
     }
