@@ -87,7 +87,7 @@ module SwapPair {
     }
 
     // create token pair pool
-    public fun create_pair<X: store, Y: store>(signer: &signer) {
+    public(script) fun create_pair<X: store, Y: store>(signer: &signer) {
         assert(Signer::address_of(signer) == PAIR_ADDRESS, PERMISSION_DENIED);
         let swap_pair = SwapPair<X, Y> {
             reserve_x: Token::zero<X>(),

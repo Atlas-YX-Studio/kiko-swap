@@ -1,5 +1,5 @@
 address 0x100 {
-module Router {
+module SwapRouter {
     use 0x1::Signer;
     use 0x100::SwapConfig::Config;
     use 0x100::SwapLibrary;
@@ -42,7 +42,7 @@ module Router {
     }
 
     // add liquidity
-    public fun add_liquidity<X: store, Y: store>(
+    public(script) fun add_liquidity<X: store, Y: store>(
         signer: &signer,
         amount_x_desired: u128,
         amount_y_desired: u128,
@@ -84,7 +84,7 @@ module Router {
 
     // get y
     // Specify the number of tokens sold to get another token
-    public fun swap_exact_token_for_token<X: store, Y: store>(
+    public(script) fun swap_exact_token_for_token<X: store, Y: store>(
         signer: &signer,
         amount_x_in: u128,
         amount_y_out_min: u128
@@ -105,7 +105,7 @@ module Router {
 
     // get x 
     // Specify the number of tokens to buy and sell another token
-    public fun swap_token_for_exact_token<X: store, Y: store>(
+    public(script) fun swap_token_for_exact_token<X: store, Y: store>(
         signer: &signer,
         // Number of assets you want to buy
         amount_y_out: u128,
