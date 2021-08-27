@@ -1,10 +1,12 @@
 address 0x100 {
 module SwapLibrary {
     use 0x1::Token;
+    use 0x1::Account;
+    use 0x1::Signer;
     use 0x1::BCS;
     use 0x1::Compare;
     use 0x1::Math;
-    use 0x100:SwapConfig;
+    use 0x100::SwapConfig;
 
     const IDENTICAL_TOKEN: u64 = 300001;
     const INSUFFICIENT_AMOUNT: u64 = 300002;
@@ -22,7 +24,7 @@ module SwapLibrary {
     }
 
     // given some amount of an asset and pair reserves, returns an equivalent amount of the other asset
-    public fun quote(amount_x: u128, reserve_x: u128, reserve_x: u128): u128 {
+    public fun quote(amount_x: u128, reserve_x: u128, reserve_y: u128): u128 {
         assert(amount_x > 0, INSUFFICIENT_AMOUNT);
         assert(reserve_x > 0 && reserve_y > 0, INSUFFICIENT_LIQUIDITY);
         Math::mul_div(amount_x, reserve_y, reserve_x)
@@ -51,8 +53,8 @@ module SwapLibrary {
     public fun get_amount_in(amount_out: u128, reserve_in: u128, reserve_out: u128): u128 {
         assert(amount_out > 0, INSUFFICIENT_OUT_AMOUNT);
         assert(reserve_in > 0 && reserve_out > 0, INSUFFICIENT_LIQUIDITY);
-        let (_, fee_rate, _) = SwapConfig::get_fee_config();
-        let numerator = reserve)_in * amount_out * 10000;
+        let fee_rate = SwapConfig::get_fee_config();
+        let numerator = reserve_in * amount_out * 10000;
         let denominator = (reserve_out - amount_out) * (10000 - fee_rate);
         (numerator / denominator) + 1
     }
