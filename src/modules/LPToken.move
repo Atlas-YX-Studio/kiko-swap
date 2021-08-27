@@ -1,6 +1,8 @@
 address 0x100 {
 module LPToken {
     use 0x1::Token::{Self, Token};
+    use 0x1::Signer;
+    use 0x1::Account;
 
     struct LPToken<X, Y> has key, store {}
 
@@ -48,8 +50,8 @@ module LPToken {
         if (!is_accept_token) {
             Account::do_accept_token<LPToken<X, Y>>(&account);
         };
-        let token = mint<LPToken<X, Y>>(amount);
-        Account::deposit_to_self(&account, token);
+        let token = mint<X, Y>(amount);
+        Account::deposit_to_self(&account, token)
     }
 
     /// Return the token address.

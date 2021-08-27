@@ -1,7 +1,7 @@
 address 0x100 {
 module SwapConfig {
 
-    const CONFIG_ADDRESS = 0x100;
+    const CONFIG_ADDRESS: address = @0x100;
 
     struct Config has key, store {
         // deposit fee to

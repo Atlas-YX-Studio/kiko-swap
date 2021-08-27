@@ -3,10 +3,11 @@ module SwapRouter {
     use 0x1::Signer;
     use 0x100::SwapConfig::Config;
     use 0x100::SwapLibrary;
+    use 0x100::SwapPair;
     use 0x100::LPToken::LPToken;
 
-    const CONFIG_ADDRESS = @0x100;
-    const PAIR_ADDRESS = @0x100;
+    const CONFIG_ADDRESS: address = @0x100;
+    const PAIR_ADDRESS: address = @0x100;
 
     const SWAP_PAIR_NOT_EXISTS: u64 = 100001;
     const INSUFFICIENT_X_AMOUNT: u64 = 100002;
@@ -15,7 +16,7 @@ module SwapRouter {
     const INSUFFICIENT_OUTPUT_AMOUNT: u64 = 100005;
     const EXCESSIVE_INPUT_AMOUNT: u64 = 100006;
 
-    fun _add_liquidity<X: store, Y: store>(
+    fun f_add_liquidity<X: store, Y: store>(
         signer: &signer,
         amount_x_desired: u128,
         amount_y_desired: u128,
@@ -28,14 +29,16 @@ module SwapRouter {
             // admin can create swap pair
             assert(address == PAIR_ADDRESS, SWAP_PAIR_NOT_EXISTS);
             SwapPair::create_pair<X, Y>(signer);
-        }
+        };
 
-        let (reserve_x, reserve_y) = SwapPair::get_reserves<X, Y>(address);
+        let (reserve_x, reserve_y) = SwapPair::get_reserves<X, Y>();
+    
         let (amount_x, amount_y);
+
         if (reserve_x == 0 && reserve_y == 0) {
             (amount_x, amount_y) = (amount_x_desired, amount_y_desired);
         } else {
-            let amount_y_optimal = SwapLibrary.quote(amount_x_desired, reserve_x, reserve_y);
+            let amount_y_optimal = SwapLibrary::quote(amount_x_desired, reserve_x, reserve_y);
             if (amount_y_optimal <= amount_y_desired) {
                 assert(amount_y_optimal >= amount_y_min, INSUFFICIENT_Y_AMOUNT);
                 return (amount_x_desired, amount_y_optimal)
@@ -60,11 +63,11 @@ module SwapRouter {
         let order = SwapLibrary::get_token_order<X, Y>();
         if (order == 1) {
             // calculate the amount of x and y
-            let (amount_x, amount_y) = _add_liquidity<X, Y>(signer, amount_x_desired, amount_y_desired, amount_x_min, amount_y_min);
+            let (amount_x, amount_y) = f_add_liquidity<X, Y>(signer, amount_x_desired, amount_y_desired, amount_x_min, amount_y_min);
             // add liquidity with amount
             SwapPair::mint<X, Y>(signer, amount_x, amount_y);
         } else {
-            let (amount_y, amount_x) = _add_liquidity<Y, X>(signer, amount_y_desired, amount_x_desired, amount_y_min, amount_x_min);
+            let (amount_y, amount_x) = f_add_liquidity<Y, X>(signer, amount_y_desired, amount_x_desired, amount_y_min, amount_x_min);
             SwapPair::mint<Y, X>(signer, amount_y, amount_x);
         };
     }
@@ -77,17 +80,17 @@ module SwapRouter {
         amount_y_min: u128
     ) {
         let order = SwapLibrary::get_token_order<X, Y>();
-        let amount_x, amount_y;
+        let (amount_x, amount_y);
         if (order == 1) {
-            (amount_x, amount_y); = SwapPair::burn<X, Y>(signer, liquidity);
+            (amount_x, amount_y) = SwapPair::burn<X, Y>(signer, liquidity);
         } else {
-            (amount_y, amount_x); = SwapPair::burn<Y, X>(signer, liquidity);
+            (amount_y, amount_x) = SwapPair::burn<Y, X>(signer, liquidity);
         };
         assert(amount_x >= amount_x_min, INSUFFICIENT_X_AMOUNT);
         assert(amount_y >= amount_y_min, INSUFFICIENT_Y_AMOUNT);
     }
 
-    fun _swap_exact_token_for_token<X: store, Y: store>(
+    fun f_swap_exact_token_for_token<X: store, Y: store>(
         signer: &signer, 
         amount_x_in: u128,
         amount_y_in: u128,
@@ -119,13 +122,13 @@ module SwapRouter {
         SwapLibrary::accept_token<Y>(signer);
         let order = SwapLibrary::get_token_order<X, Y>();
         if (order == 1) {
-            _swap_exact_token_for_token<X, Y>(amount_x_in, 0u128, 0u128, amount_y_out_min);
+            f_swap_exact_token_for_token<X, Y>(amount_x_in, 0u128, 0u128, amount_y_out_min);
         } else {
-            _swap_exact_token_for_token<Y, X>(0u128, amount_x_in, amount_y_out_min, 0u128);
+            f_swap_exact_token_for_token<Y, X>(0u128, amount_x_in, amount_y_out_min, 0u128);
         };
     }
     
-    fun _swap_token_for_exact_token<X: store, Y: store>(
+    fun f_swap_token_for_exact_token<X: store, Y: store>(
         signer: &signer,
         amount_x_in_max: u128,
         amount_y_in_max: u128,
@@ -157,9 +160,9 @@ module SwapRouter {
         SwapLibrary::accept_token<Y>(signer);
         let order = SwapLibrary::get_token_order<X, Y>();
         if (order == 1) {
-            _swap_token_for_exact_token<X, Y>(amount_x_in_max, 0u128, 0u128, amount_y_out);
+            f_swap_token_for_exact_token<X, Y>(amount_x_in_max, 0u128, 0u128, amount_y_out);
         } else {
-            _swap_token_for_exact_token<Y, X>(0u128, amount_x_in_max, amount_y_out, 0u128);
+            f_swap_token_for_exact_token<Y, X>(0u128, amount_x_in_max, amount_y_out, 0u128);
         };
     }
 
