@@ -8,7 +8,6 @@ module SwapPair {
     use 0x1::Timestamp;
     use 0x100::LPToken;
     use 0x100::SwapConfig;
-    use 0x100::LPToken;
 
     const PAIR_ADDRESS: address = @0x100;
 
@@ -89,7 +88,7 @@ module SwapPair {
     }
 
     // fetches and sorts the reserves for a pair
-    public fun get_reserves<X: store, Y: store>(): (u128, u128) {
+    public fun get_reserves<X: store, Y: store>(): (u128, u128) acquires SwapPair{
         let swap_pair = borrow_global<SwapPair<X, Y>>(PAIR_ADDRESS);
         (swap_pair.reserve_x, swap_pair.reserve_y)
     }
@@ -133,7 +132,7 @@ module SwapPair {
     // mint fee to platform
     fun f_mint_fee<X: store, Y: store>(
         swap_pair: &mut SwapPair<X, Y>,
-        _total_supply: u128
+        total_supply: u128
     ): bool {
         let _reserve_x = swap_pair.reserve_x;
         let _reserve_y = swap_pair.reserve_y;
@@ -145,7 +144,7 @@ module SwapPair {
                 let root_k = Math::sqrt(_reserve_x * _reserve_y);
                 let root_k_last = Math::sqrt(_k_last);
                 if (root_k > root_k_last) {
-                    let numerator = _total_supply * (root_k - root_k_last);
+                    let numerator = total_supply * (root_k - root_k_last);
                     let denominator = (fee_rate / treasury_fee_rate - 1) * root_k + root_k_last;
                     let liquidity = numerator / denominator;
                     if (liquidity > 0) {

@@ -28,7 +28,7 @@ module SwapConfig {
         
     }
 
-    public fun get_fee_config(): (address, u128, u128) {
+    public fun get_fee_config(): (address, u128, u128) acquires Config {
         let config = borrow_global<Config>(CONFIG_ADDRESS);
         (config.fee_to, config.fee_rate, config.treasury_fee_rate)
     }
