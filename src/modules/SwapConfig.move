@@ -19,7 +19,7 @@ module SwapConfig {
         extra1: u128,
         extra2: u128,
         extra3: u128,
-        extra4: u128,
+        extra4: u128
     }
 
     // init
@@ -32,7 +32,7 @@ module SwapConfig {
         extra1: u128,
         extra2: u128,
         extra3: u128,
-        extra4: u128,
+        extra4: u128
     ) {
         assert(Signer::address_of(signer) == CONFIG_ADDRESS, PERMISSION_DENIED);
         assert(fee_rate < 10000, EXCESSIVE_FEE_RATE);
@@ -46,7 +46,7 @@ module SwapConfig {
             extra1: extra1,
             extra2: extra2,
             extra3: extra3,
-            extra4: extra4,
+            extra4: extra4
         });
     }
 
@@ -60,7 +60,7 @@ module SwapConfig {
         extra1: u128,
         extra2: u128,
         extra3: u128,
-        extra4: u128,
+        extra4: u128
     ) acquires Config {
         assert(Signer::address_of(signer) == CONFIG_ADDRESS, PERMISSION_DENIED);
         assert(fee_rate < 10000, EXCESSIVE_FEE_RATE);

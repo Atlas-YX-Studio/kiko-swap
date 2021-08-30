@@ -18,7 +18,7 @@ use 0x100::SwapLibrary;
         extra1: u128,
         extra2: u128,
         extra3: u128,
-        extra4: u128,
+        extra4: u128
     ) {
         SwapConfig::initialize(
             &sender, 
