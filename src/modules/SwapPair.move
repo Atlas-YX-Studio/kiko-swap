@@ -6,7 +6,7 @@ module SwapPair {
     use 0x1::Account;
     use 0x1::Math;
     use 0x1::Timestamp;
-    use 0x100::LPToken;
+    use 0x200::LPToken;
     use 0x100::SwapConfig;
 
     const PAIR_ADDRESS: address = @0x100;

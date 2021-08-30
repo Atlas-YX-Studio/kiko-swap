@@ -1,4 +1,4 @@
-address 0x100 {
+address 0x200 {
 module LPToken {
     use 0x1::Token::{Self, Token};
     use 0x1::Signer;

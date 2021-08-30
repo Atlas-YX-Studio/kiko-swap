@@ -1,10 +1,10 @@
-address 0x200 {
+address 0x300 {
 module SwapScripts {
-use 0x100::LPToken;
-use 0x100::SwapConfig;
-use 0x100::SwapPair;
-use 0x100::SwapRouter;
-use 0x100::SwapLibrary;
+    use 0x100::SwapConfig;
+    use 0x100::SwapPair;
+    use 0x100::SwapRouter;
+    use 0x100::SwapLibrary;
+    use 0x200::LPToken;
 
     // **** CONFIG ****
 
@@ -21,7 +21,7 @@ use 0x100::SwapLibrary;
         extra4: u128,
     ) {
         SwapConfig::initialize(
-            &sender, 
+            &sender,
             fee_to, 
             fee_rate, 
             treasury_fee_rate,
@@ -35,7 +35,7 @@ use 0x100::SwapLibrary;
 
     // update config
     public(script) fun update_config(
-        signer: signer,
+        sender: signer,
         fee_to: address,
         fee_rate: u128,
         treasury_fee_rate: u128,
@@ -46,7 +46,7 @@ use 0x100::SwapLibrary;
         extra4: u128,
     ) {
         SwapConfig::update(
-            &signer, 
+            &sender, 
             fee_to, 
             fee_rate, 
             treasury_fee_rate,
@@ -61,7 +61,12 @@ use 0x100::SwapLibrary;
     // **** LP TOKEN ****
 
     public(script) fun init_lp_token<X: store, Y: store>(sender: signer) {
-        LPToken::initialize<X, Y>(&sender);
+        let order = SwapLibrary::get_token_order<X, Y>();
+        if (order == 1) {
+            LPToken::initialize<X, Y>(&sender);
+        } else {
+            LPToken::initialize<Y, X>(&sender);
+        }
     }
 
     // **** TOKEN PAIR ****
@@ -119,7 +124,7 @@ use 0x100::SwapLibrary;
     }
 
     // X -> X1 -> Y
-    public(script) fun swap_exact_token_for_token_parm2<X: store, X1: store, Y: store>(
+    public(script) fun swap_exact_token_for_token_2<X: store, X1: store, Y: store>(
         sender: signer,
         amount_x_in: u128,
         amount_y_out_min: u128
@@ -129,7 +134,7 @@ use 0x100::SwapLibrary;
     }
 
     // X -> X1 -> X2 -> Y
-    public(script) fun swap_exact_token_for_token_parm3<X: store, X1: store, X2: store, Y: store>(
+    public(script) fun swap_exact_token_for_token_3<X: store, X1: store, X2: store, Y: store>(
         sender: signer,
         amount_x_in: u128,
         amount_y_out_min: u128
@@ -140,7 +145,7 @@ use 0x100::SwapLibrary;
     }
 
     // X -> X1 -> X2 -> X3 -> Y
-    public(script) fun swap_exact_token_for_token_parm4<X: store, X1: store, X2: store, X3: store, Y: store>(
+    public(script) fun swap_exact_token_for_token_4<X: store, X1: store, X2: store, X3: store, Y: store>(
         sender: signer,
         amount_x_in: u128,
         amount_y_out_min: u128
@@ -152,7 +157,7 @@ use 0x100::SwapLibrary;
     }
 
     // X -> X1 -> X2 -> X3 -> X4 -> Y
-    public(script) fun swap_exact_token_for_token_parm5<X: store, X1: store, X2: store, X3: store, X4: store, Y: store>(
+    public(script) fun swap_exact_token_for_token_5<X: store, X1: store, X2: store, X3: store, X4: store, Y: store>(
         sender: signer,
         amount_x_in: u128,
         amount_y_out_min: u128
@@ -188,7 +193,7 @@ use 0x100::SwapLibrary;
     }
 
     // X -> X1 -> Y
-    public(script) fun swap_token_for_exact_token_parm2<X: store, X1: store, Y: store>(
+    public(script) fun swap_token_for_exact_token_2<X: store, X1: store, Y: store>(
         sender: signer,
         amount_x_in_max: u128,
         amount_y_out: u128
@@ -199,7 +204,7 @@ use 0x100::SwapLibrary;
     }
 
     // X -> X1 -> X2 -> Y
-    public(script) fun swap_token_for_exact_token_parm3<X: store, X1: store, X2: store, Y: store>(
+    public(script) fun swap_token_for_exact_token_3<X: store, X1: store, X2: store, Y: store>(
         sender: signer,
         amount_x_in_max: u128,
         amount_y_out: u128
@@ -212,7 +217,7 @@ use 0x100::SwapLibrary;
     }
 
     // X -> X1 -> X2 -> X3 -> Y
-    public(script) fun swap_token_for_exact_token_parm4<X: store, X1: store, X2: store, X3: store, Y: store>(
+    public(script) fun swap_token_for_exact_token_4<X: store, X1: store, X2: store, X3: store, Y: store>(
         sender: signer,
         amount_x_in_max: u128,
         amount_y_out: u128
@@ -227,7 +232,7 @@ use 0x100::SwapLibrary;
     }
 
     // X -> X1 -> X2 -> X3 -> X4 -> Y
-    public(script) fun swap_token_for_exact_token_parm5<X: store, X1: store, X2: store, X3: store, X4: store, Y: store>(
+    public(script) fun swap_token_for_exact_token_5<X: store, X1: store, X2: store, X3: store, X4: store, Y: store>(
         sender: signer,
         amount_x_in_max: u128,
         amount_y_out: u128
