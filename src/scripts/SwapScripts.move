@@ -35,7 +35,7 @@ use 0x100::SwapLibrary;
 
     // update config
     public(script) fun update_config(
-        signer: &signer,
+        signer: signer,
         fee_to: address,
         fee_rate: u128,
         treasury_fee_rate: u128,
@@ -46,7 +46,7 @@ use 0x100::SwapLibrary;
         extra4: u128,
     ) {
         SwapConfig::update(
-            &sender, 
+            &signer, 
             fee_to, 
             fee_rate, 
             treasury_fee_rate,
@@ -119,7 +119,7 @@ use 0x100::SwapLibrary;
     }
 
     // X -> X1 -> Y
-    public(script) fun swap_exact_token_for_token<X: store, X1: store, Y: store>(
+    public(script) fun swap_exact_token_for_token_parm2<X: store, X1: store, Y: store>(
         sender: signer,
         amount_x_in: u128,
         amount_y_out_min: u128
@@ -129,7 +129,7 @@ use 0x100::SwapLibrary;
     }
 
     // X -> X1 -> X2 -> Y
-    public(script) fun swap_exact_token_for_token<X: store, X1: store, X2: store, Y: store>(
+    public(script) fun swap_exact_token_for_token_parm3<X: store, X1: store, X2: store, Y: store>(
         sender: signer,
         amount_x_in: u128,
         amount_y_out_min: u128
@@ -140,7 +140,7 @@ use 0x100::SwapLibrary;
     }
 
     // X -> X1 -> X2 -> X3 -> Y
-    public(script) fun swap_exact_token_for_token<X: store, X1: store, X2: store, X3: store, Y: store>(
+    public(script) fun swap_exact_token_for_token_parm4<X: store, X1: store, X2: store, X3: store, Y: store>(
         sender: signer,
         amount_x_in: u128,
         amount_y_out_min: u128
@@ -152,7 +152,7 @@ use 0x100::SwapLibrary;
     }
 
     // X -> X1 -> X2 -> X3 -> X4 -> Y
-    public(script) fun swap_exact_token_for_token<X: store, X1: store, X2: store, X3: store, X3: store, Y: store>(
+    public(script) fun swap_exact_token_for_token_parm5<X: store, X1: store, X2: store, X3: store, X4: store, Y: store>(
         sender: signer,
         amount_x_in: u128,
         amount_y_out_min: u128
@@ -184,35 +184,35 @@ use 0x100::SwapLibrary;
         amount_x_in_max: u128,
         amount_y_out: u128
     ) {
-        SwapRouter::swap_exact_token_for_token<X, Y>(&sender, amount_x_in, amount_y_out_min);
+        SwapRouter::swap_token_for_exact_token<X, Y>(&sender, amount_x_in_max, amount_y_out);
     }
 
     // X -> X1 -> Y
-    public(script) fun swap_token_for_exact_token<X: store, X1: store, Y: store>(
+    public(script) fun swap_token_for_exact_token_parm2<X: store, X1: store, Y: store>(
         sender: signer,
         amount_x_in_max: u128,
         amount_y_out: u128
     ) {
         let amount_x1_in = get_amount_in<X1, Y>(amount_y_out);
-        SwapRouter::swap_exact_token_for_token<X, X1>(&sender, amount_x_in_max, amount_x1_in);
-        SwapRouter::swap_exact_token_for_token<X1, Y>(&sender, amount_x1_in, amount_y_out);
+        SwapRouter::swap_token_for_exact_token<X, X1>(&sender, amount_x_in_max, amount_x1_in);
+        SwapRouter::swap_token_for_exact_token<X1, Y>(&sender, amount_x1_in, amount_y_out);
     }
 
     // X -> X1 -> X2 -> Y
-    public(script) fun swap_token_for_exact_token<X: store, X1: store, X2: store, Y: store>(
+    public(script) fun swap_token_for_exact_token_parm3<X: store, X1: store, X2: store, Y: store>(
         sender: signer,
         amount_x_in_max: u128,
         amount_y_out: u128
     ) {
         let amount_x2_in = get_amount_in<X2, Y>(amount_y_out);
         let amount_x1_in = get_amount_in<X1, X2>(amount_x2_in);
-        SwapRouter::swap_exact_token_for_token<X, X1>(&sender, amount_x_in_max, amount_x1_in);
-        SwapRouter::swap_exact_token_for_token<X1, X2>(&sender, amount_x1_in, amount_x2_in);
-        SwapRouter::swap_exact_token_for_token<X2, Y>(&sender, amount_x2_in, amount_y_out);
+        SwapRouter::swap_token_for_exact_token<X, X1>(&sender, amount_x_in_max, amount_x1_in);
+        SwapRouter::swap_token_for_exact_token<X1, X2>(&sender, amount_x1_in, amount_x2_in);
+        SwapRouter::swap_token_for_exact_token<X2, Y>(&sender, amount_x2_in, amount_y_out);
     }
 
     // X -> X1 -> X2 -> X3 -> Y
-    public(script) fun swap_token_for_exact_token<X: store, X1: store, X2: store, X3: store, Y: store>(
+    public(script) fun swap_token_for_exact_token_parm4<X: store, X1: store, X2: store, X3: store, Y: store>(
         sender: signer,
         amount_x_in_max: u128,
         amount_y_out: u128
@@ -220,27 +220,27 @@ use 0x100::SwapLibrary;
         let amount_x3_in = get_amount_in<X3, Y>(amount_y_out);
         let amount_x2_in = get_amount_in<X2, X3>(amount_x3_in);
         let amount_x1_in = get_amount_in<X1, X2>(amount_x2_in);
-        SwapRouter::swap_exact_token_for_token<X, X1>(&sender, amount_x_in_max, amount_x1_in);
-        SwapRouter::swap_exact_token_for_token<X1, X2>(&sender, amount_x1_in, amount_x2_in);
-        SwapRouter::swap_exact_token_for_token<X2, X3>(&sender, amount_x2_in, amount_x3_in);
-        SwapRouter::swap_exact_token_for_token<X3, Y>(&sender, amount_x3_in, amount_y_out);
+        SwapRouter::swap_token_for_exact_token<X, X1>(&sender, amount_x_in_max, amount_x1_in);
+        SwapRouter::swap_token_for_exact_token<X1, X2>(&sender, amount_x1_in, amount_x2_in);
+        SwapRouter::swap_token_for_exact_token<X2, X3>(&sender, amount_x2_in, amount_x3_in);
+        SwapRouter::swap_token_for_exact_token<X3, Y>(&sender, amount_x3_in, amount_y_out);
     }
 
     // X -> X1 -> X2 -> X3 -> X4 -> Y
-    public(script) fun swap_token_for_exact_token<X: store, X1: store, X2: store, X3: store, X4: store, Y: store>(
+    public(script) fun swap_token_for_exact_token_parm5<X: store, X1: store, X2: store, X3: store, X4: store, Y: store>(
         sender: signer,
         amount_x_in_max: u128,
         amount_y_out: u128
     ) {
         let amount_x4_in = get_amount_in<X4, Y>(amount_y_out);
-        let amount_x3_in = get_amount_in<X3, X4>(amount_x4_out);
+        let amount_x3_in = get_amount_in<X3, X4>(amount_x4_in);
         let amount_x2_in = get_amount_in<X2, X3>(amount_x3_in);
         let amount_x1_in = get_amount_in<X1, X2>(amount_x2_in);
-        SwapRouter::swap_exact_token_for_token<X, X1>(&sender, amount_x_in_max, amount_x1_in);
-        SwapRouter::swap_exact_token_for_token<X1, X2>(&sender, amount_x1_in, amount_x2_in);
-        SwapRouter::swap_exact_token_for_token<X2, X3>(&sender, amount_x2_in, amount_x3_in);
-        SwapRouter::swap_exact_token_for_token<X3, X4>(&sender, amount_x3_in, amount_x4_in);
-        SwapRouter::swap_exact_token_for_token<X4, Y>(&sender, amount_x4_in, amount_y_out);
+        SwapRouter::swap_token_for_exact_token<X, X1>(&sender, amount_x_in_max, amount_x1_in);
+        SwapRouter::swap_token_for_exact_token<X1, X2>(&sender, amount_x1_in, amount_x2_in);
+        SwapRouter::swap_token_for_exact_token<X2, X3>(&sender, amount_x2_in, amount_x3_in);
+        SwapRouter::swap_token_for_exact_token<X3, X4>(&sender, amount_x3_in, amount_x4_in);
+        SwapRouter::swap_token_for_exact_token<X4, Y>(&sender, amount_x4_in, amount_y_out);
     }
 
 }

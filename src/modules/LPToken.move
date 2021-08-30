@@ -45,13 +45,13 @@ module LPToken {
     }
 
     /// Mint token to singer
-    public fun mint_to<X: store, Y: store>(account: signer, amount: u128) acquires SharedMintCapability{
-        let is_accept_token = Account::is_accepts_token<LPToken<X, Y>>(Signer::address_of(&account));
+    public fun mint_to<X: store, Y: store>(account: &signer, amount: u128) acquires SharedMintCapability{
+        let is_accept_token = Account::is_accepts_token<LPToken<X, Y>>(Signer::address_of(account));
         if (!is_accept_token) {
-            Account::do_accept_token<LPToken<X, Y>>(&account);
+            Account::do_accept_token<LPToken<X, Y>>(account);
         };
         let token = mint<X, Y>(amount);
-        Account::deposit_to_self(&account, token);
+        Account::deposit_to_self(account, token);
     }
 
     /// Return the token address.
