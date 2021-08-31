@@ -189,7 +189,58 @@ script {
         assert(balance_eth == 1000000000, 6002);
         // ETH = 5, USDT = 20.020040111
         let (reserve_x, reserve_y) = SwapPair::get_reserves<ETH, USDT>();
-        assert(reserve_x == 5000000000 && reserve_y == 20020040111, 5001);
+        assert(reserve_x == 5000000000 && reserve_y == 20020040111, 6003);
+    }
+}
+// check: EXECUTED
+
+//! new-transaction
+//! sender: lp
+address lp = {{lp}};
+script {
+    use 0x1::Account;
+    use dummy::Dummy::{ETH, USDT};
+    use 0x100::SwapPair;
+    use 0x300::SwapScripts;
+
+    const MULTIPLE: u128 = 1000000000;
+
+    // remove 10 LP token
+    fun remove_liquidity(sender: signer) {
+        SwapScripts::remove_liquidity<ETH, USDT>(sender, 10*MULTIPLE, 1*MULTIPLE, 1*MULTIPLE);
+        let (reserve_x, reserve_y) = SwapPair::get_reserves<ETH, USDT>();
+        assert(reserve_x == 417189 && reserve_y == 1670427, 7001);
+        // get 4.999582811 ETH, 20.018369684 USDT
+        let balance_eth = Account::balance<ETH>(@lp);
+        let balance_usdt = Account::balance<USDT>(@lp);
+        assert(balance_eth == 4999582811 && balance_usdt == 20018369684, 7002);
+    }
+}
+// check: EXECUTED
+
+
+//! new-transaction
+//! sender: admin
+address admin = {{admin}};
+script {
+    use 0x1::Account;
+    use dummy::Dummy::{ETH, USDT};
+    use 0x100::SwapPair;
+    use 0x200::LPToken::LPToken;
+    use 0x300::SwapScripts;
+
+    const MULTIPLE: u128 = 1000000000;
+
+    // remove 10 LP token
+    fun remove_liquidity(sender: signer) {
+        let lp_amount = Account::balance<LPToken<ETH, USDT>>(@admin);
+        SwapScripts::remove_liquidity<ETH, USDT>(sender, lp_amount, 1, 1);
+        let (reserve_x, reserve_y) = SwapPair::get_reserves<ETH, USDT>();
+        assert(reserve_x == 0 && reserve_y == 0, 8001);
+        // get 0.000417189 ETH, 0.001670427 USDT
+        let balance_eth = Account::balance<ETH>(@admin);
+        let balance_usdt = Account::balance<USDT>(@admin);
+        assert(balance_eth == 417189 && balance_usdt == 1670427, 8002);
     }
 }
 // check: EXECUTED

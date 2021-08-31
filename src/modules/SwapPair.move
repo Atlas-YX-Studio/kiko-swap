@@ -146,8 +146,7 @@ module SwapPair {
 
     // mint fee to platform
     fun f_mint_fee<X: store, Y: store>(
-        swap_pair: &mut SwapPair<X, Y>,
-        _total_supply: u128
+        swap_pair: &mut SwapPair<X, Y>
     ): bool {
         let _reserve_x = swap_pair.reserve_x;
         let _reserve_y = swap_pair.reserve_y;
@@ -159,6 +158,7 @@ module SwapPair {
                 let root_k = Math::sqrt(_reserve_x * _reserve_y);
                 let root_k_last = Math::sqrt(_k_last);
                 if (root_k > root_k_last) {
+                    let _total_supply = Token::market_cap<LPToken<X, Y>>();
                     let numerator = _total_supply * ((root_k - root_k_last) as u128);
                     let denominator = (fee_rate / treasury_fee_rate - 1) * (root_k as u128) + (root_k_last as u128);
                     let liquidity = numerator / denominator;
@@ -192,9 +192,9 @@ module SwapPair {
         let swap_pair = borrow_global_mut<SwapPair<X, Y>>(PAIR_ADDRESS);
         let balance_x = Token::value<X>(&swap_pair.reserve_x_token);
         let balance_y = Token::value<Y>(&swap_pair.reserve_y_token);
-        let total_supply = Token::market_cap<LPToken<X, Y>>();
         // mint LP token to platform
-        let fee_on = f_mint_fee<X, Y>(swap_pair, total_supply);
+        let fee_on = f_mint_fee<X, Y>(swap_pair);
+        let total_supply = Token::market_cap<LPToken<X, Y>>();
         // mint LP token to user
         let liquidity: u128;
         if (total_supply == 0) {
@@ -239,9 +239,9 @@ module SwapPair {
         let swap_pair = borrow_global_mut<SwapPair<X, Y>>(PAIR_ADDRESS);
         let balance_x = Token::value<X>(&swap_pair.reserve_x_token);
         let balance_y = Token::value<Y>(&swap_pair.reserve_y_token);
-        let total_supply = Token::market_cap<LPToken<X, Y>>();
         // mint LP token to platform
-        let fee_on = f_mint_fee<X, Y>(swap_pair, total_supply);
+        let fee_on = f_mint_fee<X, Y>(swap_pair);
+        let total_supply = Token::market_cap<LPToken<X, Y>>();
         let amount_x = Math::mul_div(liquidity, balance_x, total_supply);
         let amount_y = Math::mul_div(liquidity, balance_y, total_supply);
         assert(amount_x > 0 && amount_y > 0, INSUFFICIENT_LIQUIDITY_BURNED);
@@ -253,6 +253,8 @@ module SwapPair {
         let signer_address = Signer::address_of(signer);
         Account::deposit<X>(signer_address, x_token);
         Account::deposit<Y>(signer_address, y_token);
+        balance_x = Token::value<X>(&swap_pair.reserve_x_token);
+        balance_y = Token::value<Y>(&swap_pair.reserve_y_token);
         f_update<X, Y>(balance_x, balance_y, swap_pair);
         if (fee_on) {
             swap_pair.k_last = balance_x * balance_y;
