@@ -11,7 +11,6 @@ module SwapScripts {
     // init config only once
     public(script) fun init_config(
         sender: signer,
-        fee_to: address,
         fee_rate: u128,
         treasury_fee_rate: u128,
         extra0: u128,
@@ -22,7 +21,6 @@ module SwapScripts {
     ) {
         SwapConfig::initialize(
             &sender,
-            fee_to, 
             fee_rate, 
             treasury_fee_rate,
             extra0, 
@@ -36,7 +34,6 @@ module SwapScripts {
     // update config
     public(script) fun update_config(
         sender: signer,
-        fee_to: address,
         fee_rate: u128,
         treasury_fee_rate: u128,
         extra0: u128,
@@ -47,7 +44,6 @@ module SwapScripts {
     ) {
         SwapConfig::update(
             &sender, 
-            fee_to, 
             fee_rate, 
             treasury_fee_rate,
             extra0, 

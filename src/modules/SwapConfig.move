@@ -8,8 +8,6 @@ module SwapConfig {
     const EXCESSIVE_TREASURY_FEE_RATE: u64 = 400003;
 
     struct Config has key, store {
-        // deposit fee to
-        fee_to: address,
         // total fee, 30 for 0.3%, cannot excess 10000
         fee_rate: u128,
         // fee ratio to treasury, 5 for 0.05%, cannot excess fee_rate
@@ -25,7 +23,6 @@ module SwapConfig {
     // init
     public fun initialize(
         signer: &signer,
-        fee_to: address,
         fee_rate: u128,
         treasury_fee_rate: u128,
         extra0: u128,
@@ -39,7 +36,6 @@ module SwapConfig {
         assert(treasury_fee_rate <= fee_rate, EXCESSIVE_TREASURY_FEE_RATE);
 
         move_to<Config>(signer, Config{
-            fee_to: fee_to,
             fee_rate: fee_rate,
             treasury_fee_rate: treasury_fee_rate,
             extra0: extra0,
@@ -53,7 +49,6 @@ module SwapConfig {
     // update
     public fun update(
         signer: &signer,
-        fee_to: address,
         fee_rate: u128,
         treasury_fee_rate: u128,
         extra0: u128,
@@ -67,7 +62,6 @@ module SwapConfig {
         assert(treasury_fee_rate <= fee_rate, EXCESSIVE_TREASURY_FEE_RATE);
 
         let config = borrow_global_mut<Config>(CONFIG_ADDRESS);
-        config.fee_to = fee_to;
         config.fee_rate = fee_rate;
         config.treasury_fee_rate = treasury_fee_rate;
         config.extra0 = extra0;
@@ -77,9 +71,9 @@ module SwapConfig {
         config.extra4 = extra4;
     }
 
-    public fun get_fee_config(): (address, u128, u128) acquires Config {
+    public fun get_fee_config(): (u128, u128) acquires Config {
         let config = borrow_global<Config>(CONFIG_ADDRESS);
-        (config.fee_to, config.fee_rate, config.treasury_fee_rate)
+        (config.fee_rate, config.treasury_fee_rate)
     }
 
     public fun get_extra_config(): (u128, u128, u128, u128, u128) acquires Config {

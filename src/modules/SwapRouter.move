@@ -15,18 +15,17 @@ module SwapRouter {
     const EXCESSIVE_INPUT_AMOUNT: u64 = 100006;
 
     // **** ADD LIQUDITY ****
-    fun f_add_liquidity<X: store, Y: store>(
+    public fun f_add_liquidity<X: store, Y: store>(
         signer: &signer,
         amount_x_desired: u128,
         amount_y_desired: u128,
         amount_x_min: u128,
         amount_y_min: u128
     ): (u128, u128) {
-        let address = Signer::address_of(signer);
-        let pair_exists = SwapPair::pair_exists<X, Y>(address);
+        let pair_exists = SwapPair::pair_exists<X, Y>(PAIR_ADDRESS);
         if (!pair_exists) {
             // admin can create swap pair
-            assert(address == PAIR_ADDRESS, SWAP_PAIR_NOT_EXISTS);
+            assert(Signer::address_of(signer) == PAIR_ADDRESS, SWAP_PAIR_NOT_EXISTS);
             SwapPair::create_pair<X, Y>(signer);
         };
 

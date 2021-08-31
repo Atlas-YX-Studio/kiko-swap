@@ -6,7 +6,7 @@ module SwapPair {
     use 0x1::Account;
     use 0x1::Math;
     use 0x1::Timestamp;
-    use 0x200::LPToken;
+    use 0x200::LPToken::{Self, LPToken};
     use 0x100::SwapConfig;
 
     const PAIR_ADDRESS: address = @0x100;
@@ -100,25 +100,35 @@ module SwapPair {
     // create token pair pool
     public fun create_pair<X: store, Y: store>(signer: &signer) acquires SwapPair {
         assert(Signer::address_of(signer) == PAIR_ADDRESS, PERMISSION_DENIED);
-        move_to<SwapPair<X, Y>>(signer, 
-        SwapPair<X, Y> {
-            reserve_x_token: Token::zero<X>(),
-            reserve_y_token: Token::zero<Y>(),
-            reserve_x: 0u128,
-            reserve_y: 0u128,
-            k_last: 0u128,
-            block_timestamp_last: 0,
-            create_pair_event: Event::new_event_handle<CreatePairEvent>(signer),
-            liquidity_event: Event::new_event_handle<LiquidityEvent>(signer),
-            swap_event: Event::new_event_handle<SwapEvent>(signer)
-        }); 
+        if (!Account::is_accepts_token<X>(PAIR_ADDRESS)) {
+            Account::do_accept_token<X>(signer);
+        };
+        if (!Account::is_accepts_token<Y>(PAIR_ADDRESS)) {
+            Account::do_accept_token<Y>(signer);
+        };
+        if (!Account::is_accepts_token<LPToken<X, Y>>(PAIR_ADDRESS)) {
+            Account::do_accept_token<LPToken<X, Y>>(signer);
+            // LPToken::mint_to<X, Y>(signer, 0);
+        };
+        move_to<SwapPair<X, Y>>(signer,
+            SwapPair<X, Y> {
+                reserve_x_token: Token::zero<X>(),
+                reserve_y_token: Token::zero<Y>(),
+                reserve_x: 0u128,
+                reserve_y: 0u128,
+                k_last: 0u128,
+                block_timestamp_last: 0,
+                create_pair_event: Event::new_event_handle<CreatePairEvent>(signer),
+                liquidity_event: Event::new_event_handle<LiquidityEvent>(signer),
+                swap_event: Event::new_event_handle<SwapEvent>(signer)
+            }); 
         let swap_pair = borrow_global_mut<SwapPair<X, Y>>(PAIR_ADDRESS);
 
         Event::emit_event(&mut swap_pair.create_pair_event,
             CreatePairEvent {
                 signer: Signer::address_of(signer),
-                y_token_code: Token::token_code<Y>(),
                 x_token_code: Token::token_code<X>(),
+                y_token_code: Token::token_code<Y>(),
                 block_timestamp_last: Timestamp::now_milliseconds()
             });
     }
@@ -128,7 +138,7 @@ module SwapPair {
         balance_x: u128,
         balance_y: u128,
         swap_pair: &mut SwapPair<X, Y>
-    ){
+    ) {
         swap_pair.reserve_x = balance_x;
         swap_pair.reserve_y = balance_y;
         swap_pair.block_timestamp_last = Timestamp::now_milliseconds();
@@ -136,15 +146,14 @@ module SwapPair {
 
     // mint fee to platform
     fun f_mint_fee<X: store, Y: store>(
-        signer: &signer,
         swap_pair: &mut SwapPair<X, Y>,
         _total_supply: u128
     ): bool {
         let _reserve_x = swap_pair.reserve_x;
         let _reserve_y = swap_pair.reserve_y;
         let _k_last = swap_pair.k_last;
-        let (fee_to, fee_rate, treasury_fee_rate) = SwapConfig::get_fee_config();
-        let fee_on = (fee_to != @0x1 && treasury_fee_rate > 0 && fee_rate > treasury_fee_rate);
+        let (fee_rate, treasury_fee_rate) = SwapConfig::get_fee_config();
+        let fee_on = (treasury_fee_rate > 0 && fee_rate > treasury_fee_rate);
         if (fee_on) {
             if (_k_last != 0) {
                 let root_k = Math::sqrt(_reserve_x * _reserve_y);
@@ -154,7 +163,8 @@ module SwapPair {
                     let denominator = (fee_rate / treasury_fee_rate - 1) * (root_k as u128) + (root_k_last as u128);
                     let liquidity = numerator / denominator;
                     if (liquidity > 0) {
-                        LPToken::mint_to<X, Y>(signer, liquidity);
+                        let token = LPToken::mint<X, Y>(liquidity);
+                        Account::deposit<LPToken<X, Y>>(PAIR_ADDRESS, token);
                     }
                 }
             }
@@ -182,9 +192,9 @@ module SwapPair {
         let swap_pair = borrow_global_mut<SwapPair<X, Y>>(PAIR_ADDRESS);
         let balance_x = Token::value<X>(&swap_pair.reserve_x_token);
         let balance_y = Token::value<Y>(&swap_pair.reserve_y_token);
-        let total_supply = Token::market_cap<SwapPair<X, Y>>();
+        let total_supply = Token::market_cap<LPToken<X, Y>>();
         // mint LP token to platform
-        let fee_on = f_mint_fee<X, Y>(signer, swap_pair, total_supply);
+        let fee_on = f_mint_fee<X, Y>(swap_pair, total_supply);
         // mint LP token to user
         let liquidity: u128;
         if (total_supply == 0) {
@@ -222,16 +232,16 @@ module SwapPair {
 
     // burn LP token and obtain x and y
     public fun burn<X: store, Y: store>(
-        signer: &signer, 
+        signer: &signer,
         liquidity: u128
     ): (u128, u128) acquires SwapPair{
-        let liquidity_token = Account::withdraw<LPToken::LPToken<X, Y>>(signer, liquidity);
+        let liquidity_token = Account::withdraw<LPToken<X, Y>>(signer, liquidity);
         let swap_pair = borrow_global_mut<SwapPair<X, Y>>(PAIR_ADDRESS);
         let balance_x = Token::value<X>(&swap_pair.reserve_x_token);
         let balance_y = Token::value<Y>(&swap_pair.reserve_y_token);
-        let total_supply = Token::market_cap<LPToken::LPToken<X, Y>>();
+        let total_supply = Token::market_cap<LPToken<X, Y>>();
         // mint LP token to platform
-        let fee_on = f_mint_fee<X, Y>(signer, swap_pair, total_supply);
+        let fee_on = f_mint_fee<X, Y>(swap_pair, total_supply);
         let amount_x = liquidity * balance_x / total_supply;
         let amount_y = liquidity * balance_y / total_supply;
         assert(amount_x > 0 && amount_y > 0, INSUFFICIENT_LIQUIDITY_BURNED);
@@ -299,7 +309,7 @@ module SwapPair {
         // check k
         let balance_x = Token::value<X>(&swap_pair.reserve_x_token);
         let balance_y = Token::value<Y>(&swap_pair.reserve_y_token);
-        let (_, fee_rate, _) = SwapConfig::get_fee_config();
+        let (fee_rate, _) = SwapConfig::get_fee_config();
         let balance_x_adjusted = balance_x * 10000 - amount_x_in * fee_rate;
         let balance_y_adjusted = balance_y * 10000 - amount_y_in * fee_rate;
         assert(balance_x_adjusted * balance_y_adjusted >= balance_x * balance_y * 100000000, INVALID_K);

@@ -42,7 +42,7 @@ module SwapLibrary {
     public fun get_amount_out(amount_in: u128, reserve_in: u128, reserve_out: u128): u128 {
         assert(amount_in > 0, INSUFFICIENT_INPUT_AMOUNT);
         assert(reserve_in > 0 && reserve_out > 0, INSUFFICIENT_LIQUIDITY);
-        let (_, fee_rate, _) = SwapConfig::get_fee_config();
+        let (fee_rate, _) = SwapConfig::get_fee_config();
         let amount_in_with_fee = amount_in * (10000 - fee_rate);
         let numerator = amount_in_with_fee * reserve_out;
         let denominator = reserve_in * 10000 + amount_in_with_fee;
@@ -53,7 +53,7 @@ module SwapLibrary {
     public fun get_amount_in(amount_out: u128, reserve_in: u128, reserve_out: u128): u128 {
         assert(amount_out > 0, INSUFFICIENT_OUT_AMOUNT);
         assert(reserve_in > 0 && reserve_out > 0, INSUFFICIENT_LIQUIDITY);
-        let (_,fee_rate,_) = SwapConfig::get_fee_config();
+        let (fee_rate,_) = SwapConfig::get_fee_config();
         let numerator = reserve_in * amount_out * 10000;
         let denominator = (reserve_out - amount_out) * (10000 - fee_rate);
         (numerator / denominator) + 1
