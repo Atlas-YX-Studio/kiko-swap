@@ -6,8 +6,8 @@ module dummy::Dummy {
     use 0x1::Token;
     use 0x1::Signer;
 
-    struct USDT has copy, drop, store { }
     struct ETH has copy, drop, store { }
+    struct USDT has copy, drop, store { }
 
     struct SharedMintCapability<TokenType: store> has key, store {
         cap: Token::MintCapability<TokenType>,
@@ -55,20 +55,16 @@ module dummy::Dummy {
 //! new-transaction
 //! sender: dummy
 script {
-    use 0x1::Account;
-    use 0x1::Debug;
-    use dummy::Dummy::{Self, USDT};
+    use dummy::Dummy::{Self, ETH, USDT};
 
     const MULTIPLE: u128 = 1000000000;
 
     fun register_token(sender: signer) {
+        Dummy::initialize<ETH>(&sender);
         Dummy::initialize<USDT>(&sender);
-        Dummy::mint_token<USDT>(&sender, 1 * MULTIPLE);
-        Debug::print<u128>(&Account::balance<USDT>(@dummy));
     }
 }
 // check: "Keep(EXECUTED)"
-
 
 //! new-transaction
 //! account: admin, 0x100
@@ -97,41 +93,38 @@ script {
 //! account: lp_token, 0x200
 //! sender: lp_token
 script {
-    use 0x1::STC::STC;
-    use dummy::Dummy::USDT;
+    use dummy::Dummy::{ETH, USDT};
     use 0x300::SwapScripts;
     // init_lp_token
     fun init_lp_token(sender: signer) {
-        SwapScripts::init_lp_token<STC, USDT>(sender);
+        SwapScripts::init_lp_token<ETH, USDT>(sender);
     }
 }
 // check: "Keep(EXECUTED)"
+
 
 //! new-transaction
 //! sender: admin
 address admin = {{admin}};
 script {
-    use 0x1::STC::STC;
-    use dummy::Dummy::USDT;
+    use dummy::Dummy::{ETH, USDT};
     use 0x100::SwapPair;
     use 0x300::SwapScripts;
     // create_pair
     fun create_pair(sender: signer) {
-        SwapScripts::create_pair<STC, USDT>(sender);
-        assert(SwapPair::pair_exists<STC, USDT>(@admin), 3001);
+        SwapScripts::create_pair<ETH, USDT>(sender);
+        assert(SwapPair::pair_exists<ETH, USDT>(@admin), 3001);
     }
 }
 // check: EXECUTED
 
 //! new-transaction
-//! account: lp, 20000000000 0x1::STC::STC
+//! account: lp, 10000000000 0x1::STC::STC
 //! sender: lp
 address lp = {{lp}};
 script {
     use 0x1::Account;
-    use 0x1::Debug;
-    use 0x1::STC::STC;
-    use dummy::Dummy::{Self, USDT};
+    use dummy::Dummy::{Self, ETH, USDT};
     use 0x200::LPToken::LPToken;
     use 0x300::SwapScripts;
 
@@ -139,11 +132,64 @@ script {
 
     // add_liquidity, STC:USDT = 5:20 = 1:4, k = 100, lptoken = 5
     fun add_liquidity(sender: signer) {
+        Dummy::mint_token<ETH>(&sender, 5 * MULTIPLE);
         Dummy::mint_token<USDT>(&sender, 20 * MULTIPLE);
-        SwapScripts::add_liquidity<STC, USDT>(sender, 5*MULTIPLE , 20*MULTIPLE, 1*MULTIPLE, 10*MULTIPLE);
-        // get 5 LP token
-        Debug::print<u128>(&Account::balance<LPToken<STC, USDT>>(@lp));
+        SwapScripts::add_liquidity<ETH, USDT>(sender, 5*MULTIPLE , 20*MULTIPLE, 1*MULTIPLE, 1*MULTIPLE);
+        // get 10 LP token
+        assert(Account::balance<LPToken<ETH, USDT>>(@lp) == 10 * MULTIPLE, 4001);
     }
 }
+// check: EXECUTED
 
+//! new-transaction
+//! account: alice
+//! sender: alice
+address alice = {{alice}};
+script {
+    use 0x1::Account;
+    // use 0x1::Debug;
+    use dummy::Dummy::{Self, ETH, USDT};
+    use 0x100::SwapPair;
+    use 0x300::SwapScripts;
+    const MULTIPLE: u128 = 1000000000;
 
+    fun swap_exact_token_for_token(sender: signer) {
+        Dummy::mint_token<ETH>(&sender, 1 * MULTIPLE);
+        // swap 1 ETH
+        SwapScripts::swap_exact_token_for_token<ETH, USDT>(sender, 1*MULTIPLE , 3*MULTIPLE);
+        // get 3.324995831 USDT
+        let balance_usdt = Account::balance<USDT>(@alice);
+        assert(balance_usdt == 3324995831, 5001);
+        // STC = 6, USDT = 16.675004169
+        let (reserve_x, reserve_y) = SwapPair::get_reserves<ETH, USDT>();
+        assert(reserve_x == 6000000000 && reserve_y == 16675004169, 5001);
+    }
+}
+// check: EXECUTED
+
+//! new-transaction
+//! account: bob
+//! sender: bob
+address bob = {{bob}};
+script {
+    use 0x1::Account;
+    use dummy::Dummy::{Self, ETH, USDT};
+    use 0x100::SwapPair;
+    use 0x300::SwapScripts;
+    const MULTIPLE: u128 = 1000000000;
+
+    fun swap_token_for_exact_token(sender: signer) {
+        // mint 10 USDT
+        Dummy::mint_token<USDT>(&sender, 10 * MULTIPLE);
+        // swap 3.345035942 USDT for 1 ETH
+        SwapScripts::swap_token_for_exact_token<USDT, ETH>(sender, 4*MULTIPLE , 1*MULTIPLE);
+        let balance_usdt = Account::balance<USDT>(@bob);
+        let balance_eth = Account::balance<ETH>(@bob);
+        assert(balance_usdt == 6654964058, 6001);
+        assert(balance_eth == 1000000000, 6002);
+        // ETH = 5, USDT = 20.020040111
+        let (reserve_x, reserve_y) = SwapPair::get_reserves<ETH, USDT>();
+        assert(reserve_x == 5000000000 && reserve_y == 20020040111, 5001);
+    }
+}
+// check: EXECUTED

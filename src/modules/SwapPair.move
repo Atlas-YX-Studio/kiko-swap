@@ -234,7 +234,7 @@ module SwapPair {
     public fun burn<X: store, Y: store>(
         signer: &signer,
         liquidity: u128
-    ): (u128, u128) acquires SwapPair{
+    ): (u128, u128) acquires SwapPair {
         let liquidity_token = Account::withdraw<LPToken<X, Y>>(signer, liquidity);
         let swap_pair = borrow_global_mut<SwapPair<X, Y>>(PAIR_ADDRESS);
         let balance_x = Token::value<X>(&swap_pair.reserve_x_token);
@@ -280,7 +280,7 @@ module SwapPair {
         amount_y_in: u128,
         amount_x_out: u128,
         amount_y_out: u128
-    ) acquires SwapPair{
+    ) acquires SwapPair {
         let signer_address = Signer::address_of(signer);
         // transfer token_in to pair
         assert(amount_x_in > 0 || amount_y_in > 0, INSUFFICIENT_INPUT_AMOUNT);
@@ -295,9 +295,9 @@ module SwapPair {
         };
         // transfer token_out to user
         assert(amount_x_out > 0 || amount_y_out > 0, INSUFFICIENT_OUTPUT_AMOUNT);
-        let _reserve_x = swap_pair.reserve_x;
-        let _reserve_y = swap_pair.reserve_y;
-        assert(amount_x_out < _reserve_x && amount_y_out < _reserve_y, INSUFFICIENT_LIQUIDITY);
+        let reserve_x = swap_pair.reserve_x;
+        let reserve_y = swap_pair.reserve_y;
+        assert(amount_x_out < reserve_x && amount_y_out < reserve_y, INSUFFICIENT_LIQUIDITY);
         if (amount_x_out > 0) {
             let x_out_token = Token::withdraw<X>(&mut swap_pair.reserve_x_token, amount_x_out);
             Account::deposit<X>(signer_address, x_out_token);
@@ -312,7 +312,7 @@ module SwapPair {
         let (fee_rate, _) = SwapConfig::get_fee_config();
         let balance_x_adjusted = balance_x * 10000 - amount_x_in * fee_rate;
         let balance_y_adjusted = balance_y * 10000 - amount_y_in * fee_rate;
-        assert(balance_x_adjusted * balance_y_adjusted >= balance_x * balance_y * 100000000, INVALID_K);
+        assert(Math::mul_div(balance_x_adjusted, balance_y_adjusted, 100000000) >= (reserve_x * reserve_y), INVALID_K);
         // update reserve
         f_update<X, Y>(balance_x, balance_y, swap_pair);
         // emit event
@@ -325,8 +325,8 @@ module SwapPair {
                 amount_y_in: amount_y_in,
                 amount_x_out: amount_x_out,
                 amount_y_out: amount_y_out,
-                reserve_x: balance_x,
-                reserve_y: balance_y,
+                reserve_x: swap_pair.reserve_x,
+                reserve_y: swap_pair.reserve_y,
                 block_timestamp_last: swap_pair.block_timestamp_last
             });
     }

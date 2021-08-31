@@ -145,13 +145,13 @@ module SwapRouter {
         amount_y_out: u128
     ) {
         if (amount_x_out > 0) {
-            // x swap y
+            // y swap x
             let (reserve_x, reserve_y) = SwapPair::get_reserves<X, Y>();
             let amount_y_in = SwapLibrary::get_amount_in(amount_x_out, reserve_y, reserve_x);
             assert(amount_y_in <= amount_y_in_max, EXCESSIVE_INPUT_AMOUNT);
             SwapPair::swap<X, Y>(signer, 0u128, amount_y_in, amount_x_out, 0u128);
         } else {
-            // y swap x
+            // x swap y
             let (reserve_x, reserve_y) = SwapPair::get_reserves<X, Y>();
             let amount_x_in = SwapLibrary::get_amount_in(amount_y_out, reserve_x, reserve_y);
             assert(amount_x_in <= amount_x_in_max, EXCESSIVE_INPUT_AMOUNT);
