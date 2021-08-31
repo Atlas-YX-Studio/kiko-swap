@@ -242,8 +242,8 @@ module SwapPair {
         let total_supply = Token::market_cap<LPToken<X, Y>>();
         // mint LP token to platform
         let fee_on = f_mint_fee<X, Y>(swap_pair, total_supply);
-        let amount_x = liquidity * balance_x / total_supply;
-        let amount_y = liquidity * balance_y / total_supply;
+        let amount_x = Math::mul_div(liquidity, balance_x, total_supply);
+        let amount_y = Math::mul_div(liquidity, balance_y, total_supply);
         assert(amount_x > 0 && amount_y > 0, INSUFFICIENT_LIQUIDITY_BURNED);
         // burn LP token
         LPToken::burn<X, Y>(liquidity_token);
