@@ -1,16 +1,55 @@
 address 0x100 {
 module SwapPair {
-    use 0x1::Token;
+    use 0x1::Token::{Self, Token};
     use 0x1::Event;
     use 0x1::Signer;
     use 0x1::Account;
     use 0x1::Math;
     use 0x1::Timestamp;
-    use 0x200::LPToken::{Self, LPToken};
     use 0x100::SwapConfig;
 
     const PAIR_ADDRESS: address = @0x100;
 
+    // **** LP TOKEN ****
+    const PRECISION: u8 = 9;
+
+    struct LPToken<X, Y> has key, store {}
+
+    struct LPTokenCapability<X, Y> has key, store {
+        mint: Token::MintCapability<LPToken<X, Y>>,
+        burn: Token::BurnCapability<LPToken<X, Y>>,
+    }
+
+    /// Initialization of the module.
+    fun token_initialize<X: store, Y: store>(account: &signer) {
+        Token::register_token<LPToken<X, Y>>(account, PRECISION);
+        let mint_cap = Token::remove_mint_capability<LPToken<X, Y>>(account);
+        let burn_cap = Token::remove_burn_capability<LPToken<X, Y>>(account);
+        move_to(account, LPTokenCapability{mint: mint_cap, burn: burn_cap});
+    }
+
+    /// Burn the given token.
+    fun token_burn<X: store, Y: store>(token: Token<LPToken<X, Y>>) 
+    acquires LPTokenCapability {
+        let cap = borrow_global<LPTokenCapability<X, Y>>(PAIR_ADDRESS);
+        Token::burn_with_capability(&cap.burn, token);
+    }
+
+    /// Anyone can mint LPToken<X, Y>
+    fun token_mint<X: store, Y: store>(amount: u128): Token<LPToken<X, Y>> 
+    acquires LPTokenCapability {
+        let cap = borrow_global<LPTokenCapability<X, Y>>(PAIR_ADDRESS);
+        Token::mint_with_capability(&cap.mint, amount)
+    }
+
+    /// Mint token to singer
+    fun mint_to<X: store, Y: store>(account: &signer, amount: u128) 
+    acquires LPTokenCapability {
+        let token = token_mint<X, Y>(amount);
+        Account::deposit_to_self(account, token);
+    }
+
+    // **** TOKEN PAIR ****
     const PERMISSION_DENIED: u64 = 200001;
     const INSUFFICIENT_LIQUIDITY_MINTED: u64 = 200002;
     const INSUFFICIENT_LIQUIDITY_BURNED: u64 = 200003;
@@ -100,6 +139,9 @@ module SwapPair {
     // create token pair pool
     public fun create_pair<X: store, Y: store>(signer: &signer) acquires SwapPair {
         assert(Signer::address_of(signer) == PAIR_ADDRESS, PERMISSION_DENIED);
+        // register LPToken
+        token_initialize<X, Y>(signer);
+        // accept token
         if (!Account::is_accepts_token<X>(PAIR_ADDRESS)) {
             Account::do_accept_token<X>(signer);
         };
@@ -108,7 +150,6 @@ module SwapPair {
         };
         if (!Account::is_accepts_token<LPToken<X, Y>>(PAIR_ADDRESS)) {
             Account::do_accept_token<LPToken<X, Y>>(signer);
-            // LPToken::mint_to<X, Y>(signer, 0);
         };
         move_to<SwapPair<X, Y>>(signer,
             SwapPair<X, Y> {
@@ -147,7 +188,7 @@ module SwapPair {
     // mint fee to platform
     fun f_mint_fee<X: store, Y: store>(
         swap_pair: &mut SwapPair<X, Y>
-    ): bool {
+    ): bool acquires LPTokenCapability {
         let _reserve_x = swap_pair.reserve_x;
         let _reserve_y = swap_pair.reserve_y;
         let _k_last = swap_pair.k_last;
@@ -163,7 +204,7 @@ module SwapPair {
                     let denominator = (fee_rate / treasury_fee_rate - 1) * (root_k as u128) + (root_k_last as u128);
                     let liquidity = numerator / denominator;
                     if (liquidity > 0) {
-                        let token = LPToken::mint<X, Y>(liquidity);
+                        let token = token_mint<X, Y>(liquidity);
                         Account::deposit<LPToken<X, Y>>(PAIR_ADDRESS, token);
                     }
                 }
@@ -181,7 +222,7 @@ module SwapPair {
         signer: &signer,
         amount_x: u128,
         amount_y: u128
-    ) acquires SwapPair {
+    ) acquires SwapPair, LPTokenCapability {
         // transfer token to pair
         let x_token = Account::withdraw<X>(signer, amount_x);
         let y_token = Account::withdraw<Y>(signer, amount_y);
@@ -210,7 +251,7 @@ module SwapPair {
         };
         assert(liquidity > 0, INSUFFICIENT_LIQUIDITY_MINTED);
 
-        LPToken::mint_to<X, Y>(signer, liquidity);
+        mint_to<X, Y>(signer, liquidity);
 
         f_update<X, Y>(balance_x, balance_y, swap_pair);
         if (fee_on) {
@@ -234,7 +275,7 @@ module SwapPair {
     public fun burn<X: store, Y: store>(
         signer: &signer,
         liquidity: u128
-    ): (u128, u128) acquires SwapPair {
+    ): (u128, u128) acquires SwapPair, LPTokenCapability {
         let liquidity_token = Account::withdraw<LPToken<X, Y>>(signer, liquidity);
         let swap_pair = borrow_global_mut<SwapPair<X, Y>>(PAIR_ADDRESS);
         let balance_x = Token::value<X>(&swap_pair.reserve_x_token);
@@ -246,7 +287,7 @@ module SwapPair {
         let amount_y = Math::mul_div(liquidity, balance_y, total_supply);
         assert(amount_x > 0 && amount_y > 0, INSUFFICIENT_LIQUIDITY_BURNED);
         // burn LP token
-        LPToken::burn<X, Y>(liquidity_token);
+        token_burn<X, Y>(liquidity_token);
         // obtain x and y
         let x_token = Token::withdraw<X>(&mut swap_pair.reserve_x_token, amount_x);
         let y_token = Token::withdraw<Y>(&mut swap_pair.reserve_y_token, amount_y);

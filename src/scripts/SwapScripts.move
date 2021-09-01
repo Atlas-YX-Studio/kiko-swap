@@ -4,7 +4,6 @@ module SwapScripts {
     use 0x100::SwapPair;
     use 0x100::SwapRouter;
     use 0x100::SwapLibrary;
-    use 0x200::LPToken;
 
     // **** CONFIG ****
 
@@ -52,17 +51,6 @@ module SwapScripts {
             extra3, 
             extra4
         );
-    }
-
-    // **** LP TOKEN ****
-
-    public(script) fun init_lp_token<X: store, Y: store>(sender: signer) {
-        let order = SwapLibrary::get_token_order<X, Y>();
-        if (order == 1) {
-            LPToken::initialize<X, Y>(&sender);
-        } else {
-            LPToken::initialize<Y, X>(&sender);
-        }
     }
 
     // **** TOKEN PAIR ****

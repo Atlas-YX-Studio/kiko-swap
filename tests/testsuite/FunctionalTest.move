@@ -4,7 +4,6 @@ address dummy = {{dummy}};
 module dummy::Dummy {
     use 0x1::Account;
     use 0x1::Token;
-    use 0x1::Signer;
 
     struct ETH has copy, drop, store { }
     struct USDT has copy, drop, store { }
@@ -27,10 +26,6 @@ module dummy::Dummy {
     }
 
     public fun mint_token<TokenType: store>(account: &signer, amount: u128) acquires SharedMintCapability {
-        let is_accept_token = Account::is_accepts_token<TokenType>(Signer::address_of(account));
-        if (!is_accept_token) {
-            Account::do_accept_token<TokenType>(account);
-        };
         let token = mint<TokenType>(amount);
         Account::deposit_to_self(account, token);
     }
@@ -69,54 +64,30 @@ script {
 //! new-transaction
 //! account: admin, 0x100
 //! sender: admin
+address admin = {{admin}};
 script {
+    use dummy::Dummy::{ETH, USDT};
     use 0x100::SwapConfig;
-    // init and update config
-    fun init_config(sender: signer) {
+    use 0x100::SwapPair;
+    use 0x300::SwapScripts;
+    // init config and pair
+    fun init(sender: signer) {
         SwapConfig::initialize(
             &sender, 20u128, 4u128,
             0u128, 0u128, 0u128, 0u128, 0u128
         );
-        let (fee_rate, treasury_fee_rate) = SwapConfig::get_fee_config();
-        assert(fee_rate == 20u128 && treasury_fee_rate == 4u128, 1001);
         SwapConfig::update(
             &sender, 30u128, 5u128,
             0u128, 0u128, 0u128, 0u128, 0u128
         );
-        (fee_rate, treasury_fee_rate) = SwapConfig::get_fee_config();
-        assert(fee_rate == 30u128 && treasury_fee_rate == 5u128, 1002);
-    }
-}
-// check: "Keep(EXECUTED)"
-
-//! new-transaction
-//! account: lp_token, 0x200
-//! sender: lp_token
-script {
-    use dummy::Dummy::{ETH, USDT};
-    use 0x300::SwapScripts;
-    // init_lp_token
-    fun init_lp_token(sender: signer) {
-        SwapScripts::init_lp_token<ETH, USDT>(sender);
-    }
-}
-// check: "Keep(EXECUTED)"
-
-
-//! new-transaction
-//! sender: admin
-address admin = {{admin}};
-script {
-    use dummy::Dummy::{ETH, USDT};
-    use 0x100::SwapPair;
-    use 0x300::SwapScripts;
-    // create_pair
-    fun create_pair(sender: signer) {
+        let (fee_rate, treasury_fee_rate) = SwapConfig::get_fee_config();
+        assert(fee_rate == 30u128 && treasury_fee_rate == 5u128, 3002);
+        // create pair
         SwapScripts::create_pair<ETH, USDT>(sender);
-        assert(SwapPair::pair_exists<ETH, USDT>(@admin), 3001);
+        assert(SwapPair::pair_exists<ETH, USDT>(@admin), 3003);
     }
 }
-// check: EXECUTED
+// check: "Keep(EXECUTED)"
 
 //! new-transaction
 //! account: lp, 10000000000 0x1::STC::STC
@@ -125,7 +96,7 @@ address lp = {{lp}};
 script {
     use 0x1::Account;
     use dummy::Dummy::{Self, ETH, USDT};
-    use 0x200::LPToken::LPToken;
+    use 0x100::SwapPair::LPToken;
     use 0x300::SwapScripts;
 
     const MULTIPLE: u128 = 1000000000;
@@ -147,7 +118,7 @@ script {
 address alice = {{alice}};
 script {
     use 0x1::Account;
-    // use 0x1::Debug;
+    use 0x1::Debug;
     use dummy::Dummy::{Self, ETH, USDT};
     use 0x100::SwapPair;
     use 0x300::SwapScripts;
@@ -159,6 +130,7 @@ script {
         SwapScripts::swap_exact_token_for_token<ETH, USDT>(sender, 1*MULTIPLE , 3*MULTIPLE);
         // get 3.324995831 USDT
         let balance_usdt = Account::balance<USDT>(@alice);
+        Debug::print<u128>(&balance_usdt);
         assert(balance_usdt == 3324995831, 5001);
         // STC = 6, USDT = 16.675004169
         let (reserve_x, reserve_y) = SwapPair::get_reserves<ETH, USDT>();
@@ -225,8 +197,7 @@ address admin = {{admin}};
 script {
     use 0x1::Account;
     use dummy::Dummy::{ETH, USDT};
-    use 0x100::SwapPair;
-    use 0x200::LPToken::LPToken;
+    use 0x100::SwapPair::{Self, LPToken};
     use 0x300::SwapScripts;
 
     const MULTIPLE: u128 = 1000000000;
