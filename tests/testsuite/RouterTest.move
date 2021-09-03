@@ -155,23 +155,14 @@ script {
 //! sender: tom
 address tom = {{tom}};
 script {
-    use 0x1::Account;
-    use 0x1::Debug;
     use dummy::Dummy::{Self, ETH, USDT};
     use 0x300::SwapScripts;
     const MULTIPLE: u128 = 1000000000;
-    const RESULT: u128 = 200000000000000000000000000000000000000;
 
     fun swap_exact_token_for_token(sender: signer) {
-
-        Debug::print<u128>(&RESULT);
-
         Dummy::mint_token<ETH>(&sender, 1 * MULTIPLE);
-        let balance_eth = Account::balance<ETH>(@tom);
-        Debug::print<u128>(&balance_eth);
         // swap 1 ETH
         SwapScripts::swap_exact_token_for_token<ETH, USDT>(sender, 1*MULTIPLE , 4*MULTIPLE);
-
     }
 }
 // check: "VMExecutionFailure(ABORTED { code: 100005"
@@ -188,15 +179,15 @@ script {
     use 0x300::SwapScripts;
     const MULTIPLE: u128 = 1000000000;
 
-    const RESULT: u128 = 300000000000000000000000000000000000000;
+    const RESULT: u128 = 200000000000000000000000000000000000000;
 
     fun swap_token_for_exact_token(sender: signer) {
 
         Debug::print<u128>(&RESULT);
 
-        Dummy::mint_token<ETH>(&sender, 100 * MULTIPLE);
+        Dummy::mint_token<ETH>(&sender, 2 * MULTIPLE);
 
-        SwapScripts::swap_token_for_exact_token<ETH, USDT>(sender, 4*MULTIPLE , 3*MULTIPLE);
+        SwapScripts::swap_token_for_exact_token<ETH, USDT>(sender, 2*MULTIPLE , 3324995831);
 
         let balance_usdt = Account::balance<USDT>(@bob);
         let balance_eth = Account::balance<ETH>(@bob);
@@ -214,3 +205,47 @@ script {
     }
 }
 // check: EXECUTED
+
+
+//! new-transaction
+//! account: tony
+//! sender: tony
+address tony = {{tony}};
+script {
+    use dummy::Dummy::{Self, ETH, USDT};
+    use 0x300::SwapScripts;
+    const MULTIPLE: u128 = 1000000000;
+    fun swap_token_for_exact_token(sender: signer) {
+        Dummy::mint_token<ETH>(&sender, 2 * MULTIPLE);
+        SwapScripts::swap_token_for_exact_token<ETH, USDT>(sender, 1*MULTIPLE , 3324995831);
+    }
+}
+// check: VMExecutionFailure(ABORTED { code: 100006
+
+//! new-transaction
+//! account: weiwei
+//! sender: weiwei
+address weiwei = {{weiwei}};
+script {
+    use 0x1::Account;
+    use 0x1::Debug;
+    use dummy::Dummy::{Self, ETH, USDT};
+    use 0x100::SwapPair;
+    use 0x300::SwapScripts;
+    const MULTIPLE: u128 = 1000000000;
+    const RESULT: u128 = 300000000000000000000000000000000000000;
+
+    fun swap_exact_token_for_token(sender: signer) {
+
+        Debug::print<u128>(&RESULT);
+        Dummy::mint_token<USDT>(&sender, 100 * MULTIPLE);
+        SwapScripts::swap_exact_token_for_token<USDT,ETH>(sender, 8*MULTIPLE , 1*MULTIPLE);
+
+        let balance_eth = Account::balance<ETH>(@weiwei);
+        Debug::print<u128>(&balance_eth);
+
+        let (reserve_x, reserve_y) = SwapPair::get_reserves<ETH,USDT>();
+        Debug::print<u128>(&reserve_x);
+        Debug::print<u128>(&reserve_y);
+    }
+}
