@@ -66,8 +66,8 @@ module SwapPair {
         // token amount
         reserve_x: u128,
         reserve_y: u128,
-        // last k
-        k_last: u128,
+        // last sqrt k
+        root_k_last: u128,
         // last update timestamp
         block_timestamp_last: u64,
         // event
@@ -157,7 +157,7 @@ module SwapPair {
                 reserve_y_token: Token::zero<Y>(),
                 reserve_x: 0u128,
                 reserve_y: 0u128,
-                k_last: 0u128,
+                root_k_last: 0u128,
                 block_timestamp_last: 0,
                 create_pair_event: Event::new_event_handle<CreatePairEvent>(signer),
                 liquidity_event: Event::new_event_handle<LiquidityEvent>(signer),
@@ -191,17 +191,16 @@ module SwapPair {
     ): bool acquires LPTokenCapability {
         let _reserve_x = swap_pair.reserve_x;
         let _reserve_y = swap_pair.reserve_y;
-        let _k_last = swap_pair.k_last;
+        let root_k_last = swap_pair.root_k_last;
         let (fee_rate, treasury_fee_rate) = SwapConfig::get_fee_config();
         let fee_on = (treasury_fee_rate > 0 && fee_rate > treasury_fee_rate);
         if (fee_on) {
-            if (_k_last != 0) {
-                let root_k = Math::sqrt(_reserve_x * _reserve_y);
-                let root_k_last = Math::sqrt(_k_last);
+            if (root_k_last != 0) {
+                let root_k = mul_sqrt(_reserve_x, _reserve_y);
                 if (root_k > root_k_last) {
                     let _total_supply = Token::market_cap<LPToken<X, Y>>();
-                    let numerator = _total_supply * ((root_k - root_k_last) as u128);
-                    let denominator = (fee_rate / treasury_fee_rate - 1) * (root_k as u128) + (root_k_last as u128);
+                    let numerator = _total_supply * (root_k - root_k_last);
+                    let denominator = (fee_rate / treasury_fee_rate - 1) * root_k + root_k_last;
                     let liquidity = numerator / denominator;
                     if (liquidity > 0) {
                         let token = token_mint<X, Y>(liquidity);
@@ -210,8 +209,8 @@ module SwapPair {
                 }
             }
         } else {
-            if (_k_last != 0) {
-                swap_pair.k_last = 0;
+            if (root_k_last != 0) {
+                swap_pair.root_k_last = 0;
             };
         };
         return fee_on
@@ -239,7 +238,7 @@ module SwapPair {
         // mint LP token to user
         let liquidity: u128;
         if (total_supply == 0) {
-            liquidity = (Math::sqrt(amount_x * amount_y) as u128);
+            liquidity = mul_sqrt(amount_x, amount_y);
         } else {
             let liquidity_x = amount_x * total_supply / swap_pair.reserve_x;
             let liquidity_y = amount_y * total_supply / swap_pair.reserve_y;
@@ -255,7 +254,7 @@ module SwapPair {
 
         f_update<X, Y>(balance_x, balance_y, swap_pair);
         if (fee_on) {
-            swap_pair.k_last = balance_x * balance_y;
+            swap_pair.root_k_last = mul_sqrt(balance_x, balance_y);
         };
         Event::emit_event(&mut swap_pair.liquidity_event,
             LiquidityEvent {
@@ -298,7 +297,7 @@ module SwapPair {
         balance_y = Token::value<Y>(&swap_pair.reserve_y_token);
         f_update<X, Y>(balance_x, balance_y, swap_pair);
         if (fee_on) {
-            swap_pair.k_last = balance_x * balance_y;
+            swap_pair.root_k_last = mul_sqrt(balance_x, balance_y);
         };
 
         Event::emit_event(&mut swap_pair.liquidity_event,
@@ -372,6 +371,23 @@ module SwapPair {
                 reserve_y: swap_pair.reserve_y,
                 block_timestamp_last: swap_pair.block_timestamp_last
             });
+    }
+
+    fun mul_sqrt(x: u128, y: u128): u128 {
+        if (x == 0 || y == 0) {
+            return 0u128
+        };
+        let _overlimit;
+        if (x < y) {
+            _overlimit = (Math::u128_max() / x) <= y;
+        } else {
+            _overlimit = (Math::u128_max() / y) <= x;
+        };
+        if (_overlimit) {
+            (Math::sqrt(x) as u128) * (Math::sqrt(y) as u128)
+        } else {
+            (Math::sqrt(x * y) as u128)
+        }
     }
 
 }
