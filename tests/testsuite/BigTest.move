@@ -134,23 +134,126 @@ script {
 
         Debug::print<u128>(&RESULT);
 
-        Dummy::mint_token<ETH>(&sender, 1 * MULTIPLE*MULTIPLE);
+        Dummy::mint_token<ETH>(&sender, 1 * MULTIPLE);
 
         // swap 1 ETH
-        SwapScripts::swap_exact_token_for_token<ETH, USDT>(sender, 1*MULTIPLE*MULTIPLE , 3*MULTIPLE*MULTIPLE);
+        SwapScripts::swap_exact_token_for_token<ETH, USDT>(sender, 1*MULTIPLE , 3*MULTIPLE);
         // get 3.324995831 USDT
         let balance_usdt = Account::balance<USDT>(@alice);
 
          Debug::print<u128>(&balance_usdt);
 
-        //assert(balance_usdt == 3324995831, 5001);
+        assert(balance_usdt == 3987999999, 5001);
         // STC = 6, USDT = 16.675004169
         let (reserve_x, reserve_y) = SwapPair::get_reserves<ETH, USDT>();
 
         Debug::print<u128>(&reserve_x);
         Debug::print<u128>(&reserve_y);
 
-        //assert(reserve_x == 6000000000 && reserve_y == 16675004169, 5001);
+        assert(reserve_x == 50000000001000000000 && reserve_y == 199999999996012000001, 5001);
+    }
+}
+// check: EXECUTED
+
+//! new-transaction
+//! account: bob
+//! sender: bob
+address bob = {{bob}};
+script {
+    use 0x1::Account;
+    use 0x1::Debug;
+    use dummy::Dummy::{Self, ETH, USDT};
+    use 0x100::SwapPair;
+    use 0x300::SwapScripts;
+    const MULTIPLE: u128 = 1000000000;
+
+    const RESULT: u128 = 200000000000000000000000000000000000000;
+
+    fun swap_token_for_exact_token(sender: signer) {
+
+        Debug::print<u128>(&RESULT);
+        Dummy::mint_token<ETH>(&sender, 2 * MULTIPLE);
+
+        SwapScripts::swap_token_for_exact_token<ETH, USDT>(sender, 2*MULTIPLE , 3324995831);
+
+        let balance_usdt = Account::balance<USDT>(@bob);
+        let balance_eth = Account::balance<ETH>(@bob);
+        Debug::print<u128>(&balance_usdt);
+        Debug::print<u128>(&balance_eth);
+
+        assert(balance_usdt == 3324995831, 6001);
+        assert(balance_eth == 1166249791, 6002);
+        // ETH = 5, USDT = 20.020040111
+        let (reserve_x, reserve_y) = SwapPair::get_reserves<ETH, USDT>();
+
+        Debug::print<u128>(&reserve_x);
+        Debug::print<u128>(&reserve_y);
+
+        assert(reserve_x == 50000000001833750209 && reserve_y == 199999999992687004170, 6003);
+
+    }
+}
+// check: EXECUTED
+
+//! new-transaction
+//! account: weiwei
+//! sender: weiwei
+address weiwei = {{weiwei}};
+script {
+    use 0x1::Account;
+    use 0x1::Debug;
+    use dummy::Dummy::{Self, ETH, USDT};
+    use 0x100::SwapPair;
+    use 0x300::SwapScripts;
+    const MULTIPLE: u128 = 1000000000;
+    const RESULT: u128 = 300000000000000000000000000000000000000;
+
+    fun swap_exact_token_for_token(sender: signer) {
+
+        Debug::print<u128>(&RESULT);
+        Dummy::mint_token<USDT>(&sender, 100 * MULTIPLE);
+        SwapScripts::swap_exact_token_for_token<USDT,ETH>(sender, 8*MULTIPLE , 1*MULTIPLE);
+
+        let balance_eth = Account::balance<ETH>(@weiwei);
+        Debug::print<u128>(&balance_eth);
+
+        let (reserve_x, reserve_y) = SwapPair::get_reserves<ETH,USDT>();
+        Debug::print<u128>(&reserve_x);
+        Debug::print<u128>(&reserve_y);
+    }
+}
+// check: EXECUTED
+
+//! new-transaction
+//! sender: lp
+address lp = {{lp}};
+script {
+    use 0x1::Account;
+    use 0x1::Debug;
+    use dummy::Dummy::{ETH, USDT};
+    use 0x100::SwapPair;
+    use 0x300::SwapScripts;
+
+    const MULTIPLE: u128 = 1000000000;
+
+    // remove 10 LP token
+    fun remove_liquidity(sender: signer) {
+        SwapScripts::remove_liquidity<ETH, USDT>(sender, 10*MULTIPLE*MULTIPLE, 1*MULTIPLE*MULTIPLE, 1*MULTIPLE*MULTIPLE);
+        let (reserve_x, reserve_y) = SwapPair::get_reserves<ETH, USDT>();
+
+        Debug::print<u128>(&reserve_x);
+        Debug::print<u128>(&reserve_y);
+
+        //assert(reserve_x == 49999999994839750209 && reserve_y == 199999999980687004167, 7001);
+
+        // get 4.999582811 ETH, 20.018369684 USDT
+        let balance_eth = Account::balance<ETH>(@lp);
+        let balance_usdt = Account::balance<USDT>(@lp);
+
+        Debug::print<u128>(&balance_eth);
+        Debug::print<u128>(&balance_usdt);
+
+        //assert(balance_eth == 5000000000 && balance_usdt == 20000000003, 7002);
     }
 }
 // check: EXECUTED
