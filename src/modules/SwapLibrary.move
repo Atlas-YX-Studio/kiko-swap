@@ -44,9 +44,8 @@ module SwapLibrary {
         assert(reserve_in > 0 && reserve_out > 0, INSUFFICIENT_LIQUIDITY);
         let (fee_rate, _) = SwapConfig::get_fee_config();
         let amount_in_with_fee = amount_in * (10000 - fee_rate);
-        let numerator = amount_in_with_fee * reserve_out;
         let denominator = reserve_in * 10000 + amount_in_with_fee;
-        numerator / denominator
+        Math::mul_div(amount_in_with_fee, reserve_out, denominator)
     }
 
     // caculate amount in with exact out
@@ -54,9 +53,8 @@ module SwapLibrary {
         assert(amount_out > 0, INSUFFICIENT_OUT_AMOUNT);
         assert(reserve_in > 0 && reserve_out > 0, INSUFFICIENT_LIQUIDITY);
         let (fee_rate,_) = SwapConfig::get_fee_config();
-        let numerator = reserve_in * amount_out * 10000;
         let denominator = (reserve_out - amount_out) * (10000 - fee_rate);
-        (numerator / denominator) + 1
+        Math::mul_div(reserve_in, amount_out * 10000, denominator) + 1
     }
 
 }

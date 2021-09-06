@@ -354,7 +354,7 @@ module SwapPair {
         let (fee_rate, _) = SwapConfig::get_fee_config();
         let balance_x_adjusted = balance_x * 10000 - amount_x_in * fee_rate;
         let balance_y_adjusted = balance_y * 10000 - amount_y_in * fee_rate;
-        assert(Math::mul_div(balance_x_adjusted, balance_y_adjusted, 100000000) >= (reserve_x * reserve_y), INVALID_K);
+        assert(mul_sqrt(balance_x_adjusted, balance_y_adjusted) >= mul_sqrt(reserve_x, reserve_y) * 10000, INVALID_K);
         // update reserve
         f_update<X, Y>(balance_x, balance_y, swap_pair);
         // emit event
