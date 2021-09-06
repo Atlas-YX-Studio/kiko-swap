@@ -94,7 +94,9 @@ script {
 //! sender: lp
 address lp = {{lp}};
 script {
+    use 0x1::Account;
     use dummy::Dummy::{Self, ETH, USDT};
+    use 0x100::SwapPair::LPToken;
     use 0x300::SwapScripts;
     use 0x100::SwapPair;
     use 0x1::Debug;
@@ -104,13 +106,51 @@ script {
     fun add_liquidity(sender: signer) {
         Dummy::mint_token<ETH>(&sender, 50 * MULTIPLE * MULTIPLE);
         Dummy::mint_token<USDT>(&sender, 200 * MULTIPLE * MULTIPLE);
-        SwapScripts::add_liquidity<ETH, USDT>(sender, 50 * MULTIPLE * MULTIPLE , 200 * MULTIPLE * MULTIPLE, 1 * MULTIPLE * MULTIPLE, 1 * MULTIPLE * MULTIPLE);
+        SwapScripts::add_liquidity<ETH, USDT>(sender, 50 * MULTIPLE* MULTIPLE , 200 * MULTIPLE* MULTIPLE, 1 * MULTIPLE * MULTIPLE, 1 * MULTIPLE * MULTIPLE);
+        // get 10 LP token
+        let (reserve_x, reserve_y) = SwapPair::get_reserves<ETH, USDT>();
+        Debug::print<u128>(&reserve_x);
+        Debug::print<u128>(&reserve_y);
+        Debug::print<u128>(&Account::balance<LPToken<ETH, USDT>>(@lp));
+        assert(Account::balance<LPToken<ETH, USDT>>(@lp) == 99999999982591731253, 4001);
+    }
+}
+// check: EXECUTED
 
+//! new-transaction
+//! account: alice
+//! sender: alice
+address alice = {{alice}};
+script {
+    use 0x1::Account;
+    use 0x1::Debug;
+    use dummy::Dummy::{Self, ETH, USDT};
+    use 0x100::SwapPair;
+    use 0x300::SwapScripts;
+    const MULTIPLE: u128 = 1000000000;
+    const RESULT: u128 = 100000000000000000000000000000000000000;
 
+    fun swap_exact_token_for_token(sender: signer) {
+
+        Debug::print<u128>(&RESULT);
+
+        Dummy::mint_token<ETH>(&sender, 1 * MULTIPLE*MULTIPLE);
+
+        // swap 1 ETH
+        SwapScripts::swap_exact_token_for_token<ETH, USDT>(sender, 1*MULTIPLE*MULTIPLE , 3*MULTIPLE*MULTIPLE);
+        // get 3.324995831 USDT
+        let balance_usdt = Account::balance<USDT>(@alice);
+
+         Debug::print<u128>(&balance_usdt);
+
+        //assert(balance_usdt == 3324995831, 5001);
+        // STC = 6, USDT = 16.675004169
         let (reserve_x, reserve_y) = SwapPair::get_reserves<ETH, USDT>();
 
         Debug::print<u128>(&reserve_x);
         Debug::print<u128>(&reserve_y);
+
+        //assert(reserve_x == 6000000000 && reserve_y == 16675004169, 5001);
     }
 }
 // check: EXECUTED
