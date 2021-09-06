@@ -238,13 +238,13 @@ script {
 
     // remove 10 LP token
     fun remove_liquidity(sender: signer) {
-        SwapScripts::remove_liquidity<ETH, USDT>(sender, 10*MULTIPLE*MULTIPLE, 1*MULTIPLE*MULTIPLE, 1*MULTIPLE*MULTIPLE);
+        SwapScripts::remove_liquidity<ETH, USDT>(sender, 5*MULTIPLE*MULTIPLE, 1*MULTIPLE*MULTIPLE, 1*MULTIPLE*MULTIPLE);
         let (reserve_x, reserve_y) = SwapPair::get_reserves<ETH, USDT>();
 
         Debug::print<u128>(&reserve_x);
         Debug::print<u128>(&reserve_y);
 
-        //assert(reserve_x == 49999999994839750209 && reserve_y == 199999999980687004167, 7001);
+        assert(reserve_x == 47499999999412555980 && reserve_y == 189999999998911827087, 7001);
 
         // get 4.999582811 ETH, 20.018369684 USDT
         let balance_eth = Account::balance<ETH>(@lp);
@@ -253,7 +253,7 @@ script {
         Debug::print<u128>(&balance_eth);
         Debug::print<u128>(&balance_usdt);
 
-        //assert(balance_eth == 5000000000 && balance_usdt == 20000000003, 7002);
+        assert(balance_eth == 2500000000427194229 && balance_usdt == 10000000001775177083, 7002);
     }
 }
 // check: EXECUTED
